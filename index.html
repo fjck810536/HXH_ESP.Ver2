@@ -26,11 +26,20 @@
     label.option { display:flex; align-items:flex-start; gap:11px; border:1px solid #aaa; border-radius:6px; background:#f7f7f7; padding:12px 14px; line-height:1.5; }
     input[type="checkbox"] { width:20px; height:20px; margin:1px 0 0; flex:0 0 auto; }
     .actions { display:grid; gap:10px; margin-top:18px; }
+    .chart-wrap { margin:18px 0 16px; border:1px solid var(--line); background:#fafafa; padding:14px 10px 10px; border-radius:8px; }
+    .chart-title { margin:0 0 10px; text-align:center; font-size:1rem; color:#222; }
+    .chart-caption { margin:8px 0 0; text-align:center; font-size:.8rem; color:var(--muted); line-height:1.5; }
+    .chart-svg { display:block; width:100%; height:auto; }
     .score-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:18px 0; }
     .score { border:1px solid var(--line); padding:14px; background:#fafafa; }
     .score strong { display:block; font-size:1.35rem; margin-top:4px; }
+    .result-head { margin-bottom:8px; }
+    .result-main { font-size:1rem; line-height:1.7; margin-bottom:10px; }
     .note { margin-top:16px; font-size:.84rem; color:var(--muted); line-height:1.6; }
     .hidden { display:none !important; }
+    @media (max-width: 420px) {
+      .score-grid { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
@@ -41,6 +50,7 @@
 (() => {
   const TYPES = ["強","操","放","具","變","特"];
   const TYPE_NAMES = { 強:"強化系", 操:"操作系", 放:"放出系", 具:"具現化系", 變:"變化系", 特:"特質系" };
+  const HEX_ORDER = ["強","變","具","特","操","放"]; // 原著六邊形位置：上→右上→右下→下→左下→左上
 
   const q = (id, text, options, extra={}) => ({ id, text, options, type:"single", ...extra });
   const m = (id, text, options, extra={}) => ({ id, text, options, type:"multi", ...extra });
@@ -130,6 +140,7 @@
     Q18: q("Q18", "Q18\n絕對不會花心嗎？", [
       o("是", {強:30}), o("否", {操:6,放:6,具:6,變:6,特:6})
     ]),
+    // The original build labels this screen Q16; retained intentionally for historical reproduction.
     Q19: q("Q16", "Q16\n只要自己好的話其他怎樣都無所謂嗎？", [
       o("是", {特:30}), o("否", {強:6,操:6,放:6,具:6,變:6})
     ]),
@@ -138,6 +149,7 @@
     ])
   };
 
+  const ORDER = ["Q1","Q3","Q4","Q5","Q6","Q7","Q8","Q9","Q10","Q11","Q12","Q13","Q14","Q15","Q16","Q17","Q18","Q19","Q20"];
   const NEXT = { Q3:"Q4", Q4:"Q5", Q5:"Q6", Q6:"Q7", Q7:"Q8", Q8:"Q9", Q9:"Q10", Q10:"Q11", Q11:"Q12", Q12:"Q13", Q13:"Q14", Q14:"Q15", Q15:"Q16", Q16:"Q17", Q17:"Q18", Q18:"Q19", Q19:"Q20", Q20:"RESULT" };
 
   let current = "START";
@@ -221,12 +233,82 @@
     return total;
   }
 
+  function getTopTypes(scores) {
+    const max = Math.max(...TYPES.map(t => scores[t]));
+    return TYPES.filter(t => scores[t] === max);
+  }
+
+  function vertexAnchor(x, cx) {
+    if (Math.abs(x - cx) < 8) return "middle";
+    return x > cx ? "start" : "end";
+  }
+
+  function buildHexChart(scores) {
+    const width = 360;
+    const height = 340;
+    const cx = 180;
+    const cy = 160;
+    const radius = 112;
+    const labelRadius = 144;
+    const maxScore = Math.max(1, ...TYPES.map(t => scores[t]));
+
+    const pointAt = (index, r) => {
+      const angle = -Math.PI / 2 + index * Math.PI / 3;
+      return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
+    };
+
+    const toPoints = (ratio) => HEX_ORDER.map((type, index) => {
+      const p = pointAt(index, radius * ratio);
+      return `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
+    }).join(" ");
+
+    const rings = [0.25, 0.5, 0.75, 1].map(r => `<polygon points="${toPoints(r)}" fill="none" stroke="#d2d2d2" stroke-width="1" />`).join("");
+    const axes = HEX_ORDER.map((type, index) => {
+      const p = pointAt(index, radius);
+      return `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(2)}" y2="${p.y.toFixed(2)}" stroke="#d7d7d7" stroke-width="1" />`;
+    }).join("");
+    const data = HEX_ORDER.map((type, index) => {
+      const ratio = scores[type] / maxScore;
+      const p = pointAt(index, radius * ratio);
+      return `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
+    }).join(" ");
+    const labels = HEX_ORDER.map((type, index) => {
+      const p = pointAt(index, labelRadius);
+      const valueP = pointAt(index, radius + 18);
+      return `
+        <text x="${p.x.toFixed(2)}" y="${p.y.toFixed(2)}" text-anchor="${vertexAnchor(p.x, cx)}" dominant-baseline="middle" font-size="15" fill="#111">${TYPE_NAMES[type]}</text>
+        <text x="${valueP.x.toFixed(2)}" y="${valueP.y.toFixed(2)}" text-anchor="${vertexAnchor(valueP.x, cx)}" dominant-baseline="middle" font-size="12" fill="#555">${scores[type]} 分</text>
+      `;
+    }).join("");
+
+    return `
+      <div class="chart-wrap">
+        <p class="chart-title">六邊形分佈圖</p>
+        <svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="念能力六邊形分佈圖">
+          <rect x="0" y="0" width="${width}" height="${height}" fill="#fafafa"></rect>
+          ${rings}
+          ${axes}
+          <polygon points="${data}" fill="rgba(17,17,17,.16)" stroke="#111" stroke-width="2"></polygon>
+          ${HEX_ORDER.map((type, index) => {
+            const ratio = scores[type] / maxScore;
+            const p = pointAt(index, radius * ratio);
+            return `<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="3.5" fill="#111"></circle>`;
+          }).join("")}
+          <circle cx="${cx}" cy="${cy}" r="2.5" fill="#999"></circle>
+          ${labels}
+        </svg>
+        <p class="chart-caption">位置依《HUNTER×HUNTER》常見六邊形配置：上方強化系，右上變化系，右下具現化系，下方特質系，左下操作系，左上放出系。外框依本次最高分等比例顯示。</p>
+      </div>`;
+  }
+
   function renderResult() {
     const s = calculateScores();
+    const winners = getTopTypes(s);
     app.innerHTML = `
       <p class="eyebrow">結果</p>
-      <h1>出來了!!</h1>
-      <p>結果.....................</p>
+      <h1 class="result-head">出來了!!</h1>
+      <p class="result-main">最高分：${winners.map(t => TYPE_NAMES[t]).join("／")}（${s[winners[0]]} 分）</p>
+      ${buildHexChart(s)}
       <div class="score-grid">
         ${TYPES.map(t => `<div class="score"><span>${TYPE_NAMES[t]}</span><strong>${s[t]} 分</strong></div>`).join("")}
       </div>
@@ -245,6 +327,7 @@
     return renderQuestion(current);
   }
 
+  // Small self-checks for the historical data table.
   function selfTest() {
     console.assert(QUESTIONS.Q8.options[0].score.具 === 35, "Q8 數理應為具 +35");
     console.assert(QUESTIONS.Q8.options[1].score.操 === 35, "Q8 語文應為操 +35");
