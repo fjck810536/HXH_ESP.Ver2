@@ -10,7 +10,7 @@ const root=new THREE.Group();root.position.y=-.55;scene.add(root);let model=null
 const views={auto:{p:[0,.9,6.2],l:[0,.45,0],r:0},front:{p:[0,.75,6.35],l:[0,.35,0],r:0},three:{p:[3.7,2.15,4.75],l:[0,.35,0],r:0},side:{p:[6.15,.85,.05],l:[0,.35,0],r:0},top:{p:[0,6.7,1.35],l:[0,.15,0],r:0},low:{p:[0,-.65,6.2],l:[0,.6,0],r:0},rim:{p:[0,3.6,3.0],l:[0,.28,0],r:0}};
 function setView(k){mode=k;const v=views[k];targetPos.set(...v.p);targetLook.set(...v.l);viewBtns.forEach(x=>x.classList.toggle('on',x.dataset.view===k));viewname.textContent={auto:'AUTO',front:'FRONT',three:'3/4 HIGH',side:'SIDE',top:'TOP',low:'LOW',rim:'RIM'}[k]}
 function edge(mesh,color=0xffffff,opacity=.18){const g=new THREE.EdgesGeometry(mesh.geometry,12);mesh.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color,transparent:true,opacity})))}
-function leafGeo(){const s=new THREE.Shape();s.moveTo(0,.34);s.lineTo(.19,.19);s.lineTo(.34,0);s.lineTo(.17,-.23);s.lineTo(0,-.34);s.lineTo(-.17,-.23);s.lineTo(-.34,0);s.lineTo(-.19,.19);s.closePath();const g=new THREE.ExtrudeGeometry(s,{depth:.035,bevelEnabled:false});g.center();g.rotateX(Math.PI/2);return g}
+function leafGeo(){const s=new THREE.Shape();s.moveTo(0,.42);s.bezierCurveTo(.24,.32,.40,.12,.43,-.05);s.bezierCurveTo(.34,-.25,.17,-.40,.02,-.46);s.bezierCurveTo(-.10,-.41,-.27,-.27,-.39,-.09);s.bezierCurveTo(-.38,.10,-.24,.31,0,.42);const g=new THREE.ExtrudeGeometry(s,{depth:.05,bevelEnabled:false,curveSegments:6,steps:1});g.center();const pos=g.attributes.position;for(let i=0;i<pos.count;i++){const x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i);const arch=(1-Math.min(1,Math.abs(x)/.42))*.045;const curl=(y/.46)*.02;pos.setZ(i,z+arch+curl)}pos.needsUpdate=true;g.computeVertexNormals();g.rotateX(Math.PI/2);return g}
 function disposeGroup(g){g.traverse(o=>{o.geometry?.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose?.())}})}
 function build(n){if(model){root.remove(model);disposeGroup(model)}model=new THREE.Group();root.add(model);
  const profile=[new THREE.Vector2(.74,0),new THREE.Vector2(.94,.09),new THREE.Vector2(1.02,1.55),new THREE.Vector2(1.10,2.5)];
@@ -19,10 +19,25 @@ function build(n){if(model){root.remove(model);disposeGroup(model)}model=new THR
  const rim=new THREE.Mesh(new THREE.TorusGeometry(1.10,.032,3,n),new THREE.MeshBasicMaterial({color:0xf6fbff,transparent:true,opacity:.48}));rim.rotation.x=Math.PI/2;rim.position.y=1.20;model.add(rim);
  const water=new THREE.Mesh(new THREE.CylinderGeometry(.91,.84,1.62,n),new THREE.MeshPhongMaterial({color:0x3d78a5,emissive:0x071a2b,transparent:true,opacity:.67,flatShading:true,side:THREE.DoubleSide}));water.position.y=-.37;model.add(water);edge(water,0x8fc6ef,.10);
  const surface=new THREE.Mesh(new THREE.CircleGeometry(.91,n),new THREE.MeshPhongMaterial({color:0x69a9d6,emissive:0x091a28,transparent:true,opacity:.76,flatShading:true,side:THREE.DoubleSide}));surface.rotation.x=-Math.PI/2;surface.position.y=.45;model.add(surface);edge(surface,0xc6e8ff,.15);
- const leaf=new THREE.Mesh(leafGeo(),new THREE.MeshPhongMaterial({color:0x678d47,emissive:0x121b0b,flatShading:true,side:THREE.DoubleSide}));leaf.position.set(.16,.50,-.03);leaf.rotation.set(.04,.5,-.28);model.add(leaf);edge(leaf,0x96b876,.12);
- const vein=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-.22,.505,-.03),new THREE.Vector3(.24,.505,-.03)]),new THREE.LineBasicMaterial({color:0x2b3c1b}));vein.rotation.y=.5;model.add(vein);
- model.userData={water,surface,leaf,n};facets.textContent=n}
+ const leafGroup=new THREE.Group();
+ const leafMat=new THREE.MeshPhongMaterial({color:0x6a9442,emissive:0x141d0b,flatShading:true,side:THREE.DoubleSide});
+ const leaf=new THREE.Mesh(leafGeo(),leafMat);
+ leaf.scale.set(.92,.92,.92);
+ leaf.position.set(.02,0,0);
+ leaf.rotation.set(.08,.52,-.34);
+ leafGroup.add(leaf);
+ edge(leaf,0x90b56d,.10);
+ const petiole=new THREE.Mesh(new THREE.CylinderGeometry(.012,.018,.14,6,1,false),new THREE.MeshPhongMaterial({color:0x4c6227,emissive:0x101607,flatShading:true}));
+ petiole.rotation.z=.92; petiole.rotation.x=.16; petiole.position.set(-.18,-.19,.01);
+ leafGroup.add(petiole);
+ const midribPts=[new THREE.Vector3(-.14,-.19,.034),new THREE.Vector3(-.05,-.07,.048),new THREE.Vector3(.02,.05,.054),new THREE.Vector3(.09,.17,.048),new THREE.Vector3(.16,.30,.036)];
+ const midrib=new THREE.Line(new THREE.BufferGeometry().setFromPoints(midribPts),new THREE.LineBasicMaterial({color:0x3e5320,transparent:true,opacity:.72}));
+ midrib.rotation.set(.08,.52,-.34);
+ leafGroup.add(midrib);
+ leafGroup.position.set(.16,.50,-.03);
+ model.add(leafGroup);
+ model.userData={water,surface,leafGroup,leaf,midrib,n};facets.textContent=n}
 facetBtns.forEach(btn=>btn.onclick=()=>{facetBtns.forEach(x=>x.classList.remove('on'));btn.classList.add('on');build(+btn.dataset.n)});viewBtns.forEach(btn=>btn.onclick=()=>setView(btn.dataset.view));build(12);setView('auto');
 function resize(){const w=innerWidth,h=innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();const scale=Math.max(.45,Math.min(.72,480/Math.max(w,h)));renderer.setSize(Math.round(w*scale),Math.round(h*scale),false);renderer.domElement.style.width=w+'px';renderer.domElement.style.height=h+'px'}addEventListener('resize',resize);resize();
-let last=0;const step=1000/12;function loop(t){requestAnimationFrame(loop);if(t-last<step)return;last=t;const s=t*.001;camera.position.lerp(targetPos,.18);look.lerp(targetLook,.18);camera.lookAt(look);if(mode==='auto'){root.rotation.y=.3+s*.34;root.rotation.x=Math.sin(s*.45)*.025}else{root.rotation.y+=((views[mode].r||0)-root.rotation.y)*.12;root.rotation.x*=.88}if(model){const{water,surface,leaf}=model.userData;surface.position.y=.45+Math.sin(s*1.8)*.015;water.scale.x=1+Math.sin(s*1.4)*.006;water.scale.z=1+Math.cos(s*1.6)*.006;leaf.position.x=.16+Math.cos(s*1.1)*.07;leaf.position.z=-.03+Math.sin(s*1.15)*.08;leaf.position.y=surface.position.y+.045;leaf.rotation.z=-.28+Math.sin(s*1.3)*.1;leaf.rotation.y+=.012}renderer.render(scene,camera)}requestAnimationFrame(loop);
+let last=0;const step=1000/12;function loop(t){requestAnimationFrame(loop);if(t-last<step)return;last=t;const s=t*.001;camera.position.lerp(targetPos,.18);look.lerp(targetLook,.18);camera.lookAt(look);if(mode==='auto'){root.rotation.y=.3+s*.34;root.rotation.x=Math.sin(s*.45)*.025}else{root.rotation.y+=((views[mode].r||0)-root.rotation.y)*.12;root.rotation.x*=.88}if(model){const{water,surface,leafGroup,leaf,midrib}=model.userData;surface.position.y=.45+Math.sin(s*1.8)*.015;water.scale.x=1+Math.sin(s*1.4)*.006;water.scale.z=1+Math.cos(s*1.6)*.006;leafGroup.position.x=.16+Math.cos(s*1.1)*.07;leafGroup.position.z=-.03+Math.sin(s*1.15)*.08;leafGroup.position.y=surface.position.y+.045;leafGroup.rotation.z=Math.sin(s*1.05)*.06;leaf.rotation.z=-.34+Math.sin(s*1.3)*.08;leaf.rotation.y=.52+Math.cos(s*0.9)*.06;midrib.rotation.z=leaf.rotation.z;midrib.rotation.y=leaf.rotation.y}renderer.render(scene,camera)}requestAnimationFrame(loop);
 </script></body></html>
