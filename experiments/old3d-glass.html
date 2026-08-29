@@ -1,6 +1,6 @@
 <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Old 3D Glass Experiment</title><style>
 *{box-sizing:border-box}html,body{margin:0;background:#000;color:#eee;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-height:100%}body{min-height:100svh;overflow:hidden}#stage{position:fixed;inset:0;background:#000}canvas{width:100%;height:100%;display:block;image-rendering:pixelated}.ui{position:fixed;left:14px;top:14px;z-index:3;display:grid;gap:8px;max-width:min(92vw,560px);font-size:12px}.title{font-size:14px;font-weight:700;letter-spacing:.08em}.sub{color:#888;line-height:1.5}.row{display:flex;gap:6px;flex-wrap:wrap}.label{color:#666;min-width:54px;align-self:center}.row button{border:1px solid #444;background:#111;color:#aaa;padding:7px 10px;font:inherit;cursor:pointer}.row button.on{background:#ddd;color:#000;border-color:#fff}.readout{color:#777}.tag{color:#aaa}.back{position:fixed;right:14px;top:14px;z-index:3;color:#777;text-decoration:none;font-size:12px}.back:hover{color:#fff}@media(max-width:520px){.ui{right:14px}.row button{padding:7px 8px;font-size:11px}.back{top:auto;bottom:14px}}
-</style></head><body><div id="stage"></div><div class="ui"><div class="title">OLD 3D GLASS / MODEL TEST</div><div class="sub">low-poly glass + water + floating leaf<br><span class="tag">black void / flat shade / ~12fps</span></div><div class="row"><span class="label">FACETS</span><button class="facet on" data-n="12">12</button><button class="facet" data-n="18">18</button><button class="facet" data-n="24">24</button></div><div class="row"><span class="label">CAM</span><button class="view on" data-view="auto">AUTO</button><button class="view" data-view="front">正面</button><button class="view" data-view="three">斜上</button><button class="view" data-view="side">側面</button><button class="view" data-view="top">俯視</button><button class="view" data-view="low">低角</button><button class="view" data-view="rim">杯口</button></div><div class="readout">FACETS: <span id="facets">12</span> / VIEW: <span id="viewname">AUTO</span></div></div><a class="back" href="../">← HXH_ESP.Ver2</a>
+</style></head><body><div id="stage"></div><div class="ui"><div class="title">OLD 3D GLASS / MODEL TEST</div><div class="sub">low-poly glass + water + floating leaf<br><span class="tag">black void / flat shade / ~12fps</span></div><div class="row"><span class="label">FACETS</span><button class="facet on" data-n="12">12</button><button class="facet" data-n="18">18</button><button class="facet" data-n="24">24</button></div><div class="row"><span class="label">CAM</span><button class="view on" data-view="auto">AUTO</button><button class="view" data-view="front">正面</button><button class="view" data-view="three">斜上</button><button class="view" data-view="side">側面</button><button class="view" data-view="top">俯視</button><button class="view" data-view="low">低角</button><button class="view" data-view="rim">杯口</button></div><div class="readout">FACETS: <span id="facets">12</span> / VIEW: <span id="viewname">AUTO</span><br>LEAF: 15 verts / 16 tris</div></div><a class="back" href="../">← HXH_ESP.Ver2</a>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
 const host=document.querySelector('#stage'),facets=document.querySelector('#facets'),viewname=document.querySelector('#viewname'),facetBtns=[...document.querySelectorAll('.facet')],viewBtns=[...document.querySelectorAll('.view')];
@@ -10,7 +10,27 @@ const root=new THREE.Group();root.position.y=-.55;scene.add(root);let model=null
 const views={auto:{p:[0,.9,6.2],l:[0,.45,0],r:0},front:{p:[0,.75,6.35],l:[0,.35,0],r:0},three:{p:[3.7,2.15,4.75],l:[0,.35,0],r:0},side:{p:[6.15,.85,.05],l:[0,.35,0],r:0},top:{p:[0,6.7,1.35],l:[0,.15,0],r:0},low:{p:[0,-.65,6.2],l:[0,.6,0],r:0},rim:{p:[0,3.6,3.0],l:[0,.28,0],r:0}};
 function setView(k){mode=k;const v=views[k];targetPos.set(...v.p);targetLook.set(...v.l);viewBtns.forEach(x=>x.classList.toggle('on',x.dataset.view===k));viewname.textContent={auto:'AUTO',front:'FRONT',three:'3/4 HIGH',side:'SIDE',top:'TOP',low:'LOW',rim:'RIM'}[k]}
 function edge(mesh,color=0xffffff,opacity=.18){const g=new THREE.EdgesGeometry(mesh.geometry,12);mesh.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color,transparent:true,opacity})))}
-function leafGeo(){const s=new THREE.Shape();s.moveTo(0,.42);s.bezierCurveTo(.24,.32,.40,.12,.43,-.05);s.bezierCurveTo(.34,-.25,.17,-.40,.02,-.46);s.bezierCurveTo(-.10,-.41,-.27,-.27,-.39,-.09);s.bezierCurveTo(-.38,.10,-.24,.31,0,.42);const g=new THREE.ExtrudeGeometry(s,{depth:.05,bevelEnabled:false,curveSegments:6,steps:1});g.center();const pos=g.attributes.position;for(let i=0;i<pos.count;i++){const x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i);const arch=(1-Math.min(1,Math.abs(x)/.42))*.045;const curl=(y/.46)*.02;pos.setZ(i,z+arch+curl)}pos.needsUpdate=true;g.computeVertexNormals();g.rotateX(Math.PI/2);return g}
+function leafGeo(){
+ const stations=[
+  {z:-.36,w:.045,lift:0,drop:.004,skew:-.006},
+  {z:-.20,w:.185,lift:.018,drop:.014,skew:-.010},
+  {z:.02,w:.275,lift:.032,drop:.020,skew:.008},
+  {z:.23,w:.175,lift:.022,drop:.014,skew:-.004},
+  {z:.41,w:.018,lift:.004,drop:.003,skew:0}
+ ];
+ const pos=[];
+ for(const s of stations){
+  pos.push(-s.w+s.skew,s.lift-s.drop,s.z,  s.skew,s.lift,s.z,  s.w+s.skew,s.lift-s.drop*.9,s.z);
+ }
+ const idx=[];
+ for(let r=0;r<stations.length-1;r++){
+  const a=r*3,b=a+3;
+  idx.push(a,b,a+1, a+1,b,b+1, a+1,b+1,a+2, a+2,b+1,b+2);
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+ g.setIndex(idx);g.computeVertexNormals();return g
+}
 function disposeGroup(g){g.traverse(o=>{o.geometry?.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose?.())}})}
 function build(n){if(model){root.remove(model);disposeGroup(model)}model=new THREE.Group();root.add(model);
  const profile=[new THREE.Vector2(.74,0),new THREE.Vector2(.94,.09),new THREE.Vector2(1.02,1.55),new THREE.Vector2(1.10,2.5)];
@@ -20,24 +40,13 @@ function build(n){if(model){root.remove(model);disposeGroup(model)}model=new THR
  const water=new THREE.Mesh(new THREE.CylinderGeometry(.91,.84,1.62,n),new THREE.MeshPhongMaterial({color:0x3d78a5,emissive:0x071a2b,transparent:true,opacity:.67,flatShading:true,side:THREE.DoubleSide}));water.position.y=-.37;model.add(water);edge(water,0x8fc6ef,.10);
  const surface=new THREE.Mesh(new THREE.CircleGeometry(.91,n),new THREE.MeshPhongMaterial({color:0x69a9d6,emissive:0x091a28,transparent:true,opacity:.76,flatShading:true,side:THREE.DoubleSide}));surface.rotation.x=-Math.PI/2;surface.position.y=.45;model.add(surface);edge(surface,0xc6e8ff,.15);
  const leafGroup=new THREE.Group();
- const leafMat=new THREE.MeshPhongMaterial({color:0x6a9442,emissive:0x141d0b,flatShading:true,side:THREE.DoubleSide});
- const leaf=new THREE.Mesh(leafGeo(),leafMat);
- leaf.scale.set(.92,.92,.92);
- leaf.position.set(.02,0,0);
- leaf.rotation.set(.08,.52,-.34);
+ const leaf=new THREE.Mesh(leafGeo(),new THREE.MeshPhongMaterial({color:0x688f43,emissive:0x10180a,flatShading:true,side:THREE.DoubleSide,shininess:5}));
  leafGroup.add(leaf);
- edge(leaf,0x90b56d,.10);
- const petiole=new THREE.Mesh(new THREE.CylinderGeometry(.012,.018,.14,6,1,false),new THREE.MeshPhongMaterial({color:0x4c6227,emissive:0x101607,flatShading:true}));
- petiole.rotation.z=.92; petiole.rotation.x=.16; petiole.position.set(-.18,-.19,.01);
- leafGroup.add(petiole);
- const midribPts=[new THREE.Vector3(-.14,-.19,.034),new THREE.Vector3(-.05,-.07,.048),new THREE.Vector3(.02,.05,.054),new THREE.Vector3(.09,.17,.048),new THREE.Vector3(.16,.30,.036)];
- const midrib=new THREE.Line(new THREE.BufferGeometry().setFromPoints(midribPts),new THREE.LineBasicMaterial({color:0x3e5320,transparent:true,opacity:.72}));
- midrib.rotation.set(.08,.52,-.34);
- leafGroup.add(midrib);
- leafGroup.position.set(.16,.50,-.03);
- model.add(leafGroup);
- model.userData={water,surface,leafGroup,leaf,midrib,n};facets.textContent=n}
+ const petiole=new THREE.Mesh(new THREE.CylinderGeometry(.010,.014,.18,4,1,false),new THREE.MeshPhongMaterial({color:0x4b642c,emissive:0x0b1006,flatShading:true}));
+ petiole.rotation.x=Math.PI/2;petiole.position.set(-.004,-.003,-.445);leafGroup.add(petiole);
+ leafGroup.position.set(.16,.485,-.03);leafGroup.rotation.set(.055,.54,-.045);model.add(leafGroup);
+ model.userData={water,surface,leafGroup,leaf,n};facets.textContent=n}
 facetBtns.forEach(btn=>btn.onclick=()=>{facetBtns.forEach(x=>x.classList.remove('on'));btn.classList.add('on');build(+btn.dataset.n)});viewBtns.forEach(btn=>btn.onclick=()=>setView(btn.dataset.view));build(12);setView('auto');
 function resize(){const w=innerWidth,h=innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();const scale=Math.max(.45,Math.min(.72,480/Math.max(w,h)));renderer.setSize(Math.round(w*scale),Math.round(h*scale),false);renderer.domElement.style.width=w+'px';renderer.domElement.style.height=h+'px'}addEventListener('resize',resize);resize();
-let last=0;const step=1000/12;function loop(t){requestAnimationFrame(loop);if(t-last<step)return;last=t;const s=t*.001;camera.position.lerp(targetPos,.18);look.lerp(targetLook,.18);camera.lookAt(look);if(mode==='auto'){root.rotation.y=.3+s*.34;root.rotation.x=Math.sin(s*.45)*.025}else{root.rotation.y+=((views[mode].r||0)-root.rotation.y)*.12;root.rotation.x*=.88}if(model){const{water,surface,leafGroup,leaf,midrib}=model.userData;surface.position.y=.45+Math.sin(s*1.8)*.015;water.scale.x=1+Math.sin(s*1.4)*.006;water.scale.z=1+Math.cos(s*1.6)*.006;leafGroup.position.x=.16+Math.cos(s*1.1)*.07;leafGroup.position.z=-.03+Math.sin(s*1.15)*.08;leafGroup.position.y=surface.position.y+.045;leafGroup.rotation.z=Math.sin(s*1.05)*.06;leaf.rotation.z=-.34+Math.sin(s*1.3)*.08;leaf.rotation.y=.52+Math.cos(s*0.9)*.06;midrib.rotation.z=leaf.rotation.z;midrib.rotation.y=leaf.rotation.y}renderer.render(scene,camera)}requestAnimationFrame(loop);
+let last=0;const step=1000/12;function loop(t){requestAnimationFrame(loop);if(t-last<step)return;last=t;const s=t*.001;camera.position.lerp(targetPos,.18);look.lerp(targetLook,.18);camera.lookAt(look);if(mode==='auto'){root.rotation.y=.3+s*.34;root.rotation.x=Math.sin(s*.45)*.025}else{root.rotation.y+=((views[mode].r||0)-root.rotation.y)*.12;root.rotation.x*=.88}if(model){const{water,surface,leafGroup}=model.userData;surface.position.y=.45+Math.sin(s*1.8)*.015;water.scale.x=1+Math.sin(s*1.4)*.006;water.scale.z=1+Math.cos(s*1.6)*.006;leafGroup.position.x=.16+Math.cos(s*.78)*.038;leafGroup.position.z=-.03+Math.sin(s*.72)*.045;leafGroup.position.y=surface.position.y+.026;leafGroup.rotation.x=.055+Math.sin(s*.85)*.018;leafGroup.rotation.y=.54+Math.sin(s*.52)*.035;leafGroup.rotation.z=-.045+Math.cos(s*.67)*.022}renderer.render(scene,camera)}requestAnimationFrame(loop);
 </script></body></html>
