@@ -46,9 +46,9 @@ function revealMulti(box,scroll,items,run){
   box.replaceChildren();
   scroll.scrollTop=0;
 
-  /* Nearly continuous stepping: next option arrives as the previous entry settles. */
-  const gap=170;
-  const incomingDuration=150;
+  /* Fast continuous stepping: preserve one-by-one append, halve the cadence. */
+  const gap=85;
+  const incomingDuration=90;
 
   function showOne(index){
     if(run!==stackRun||!box.isConnected||index>=items.length)return;
@@ -65,7 +65,7 @@ function revealMulti(box,scroll,items,run){
     if(index+1<items.length)setTimeout(()=>showOne(index+1),gap);
   }
 
-  setTimeout(()=>showOne(0),80);
+  setTimeout(()=>showOne(0),40);
 }
 
 function revealStack(){
