@@ -1,0 +1,35 @@
+.hex-chart-animated{position:relative;overflow:hidden}
+.hex-chart-animated .chart-title{opacity:0;animation:hexCopyIn 120ms steps(3,end) 1180ms forwards}
+.hex-chart-animated .chart-caption{opacity:0;animation:hexCopyIn 120ms steps(3,end) 1320ms forwards}
+.hex-chart-animated .chart-svg{overflow:visible}
+.hex-chart-animated .hex-bg{opacity:0;animation:hexBgIn 90ms steps(2,end) 20ms forwards}
+.hex-chart-animated .hex-center{opacity:0;transform-origin:180px 160px;animation:hexCenterPop 150ms steps(4,end) 70ms forwards}
+.hex-chart-animated .hex-axis{stroke-dasharray:1;stroke-dashoffset:1;animation:hexAxisDraw 260ms steps(7,end) forwards}
+.hex-chart-animated .hex-axis:nth-of-type(1){animation-delay:140ms}
+.hex-chart-animated .hex-axis:nth-of-type(2){animation-delay:155ms}
+.hex-chart-animated .hex-axis:nth-of-type(3){animation-delay:170ms}
+.hex-chart-animated .hex-axis:nth-of-type(4){animation-delay:185ms}
+.hex-chart-animated .hex-axis:nth-of-type(5){animation-delay:200ms}
+.hex-chart-animated .hex-axis:nth-of-type(6){animation-delay:215ms}
+.hex-chart-animated .hex-ring{opacity:0;transform-box:view-box;transform-origin:180px 160px;transform:scale(.02)}
+.hex-chart-animated .hex-ring-1{animation:hexRingGrow 150ms steps(5,end) 300ms forwards}
+.hex-chart-animated .hex-ring-2{animation:hexRingGrow 150ms steps(5,end) 365ms forwards}
+.hex-chart-animated .hex-ring-3{animation:hexRingGrow 150ms steps(5,end) 430ms forwards}
+.hex-chart-animated .hex-ring-4{animation:hexRingGrow 150ms steps(5,end) 495ms forwards}
+.hex-chart-animated .hex-data{opacity:0;transform-box:view-box;transform-origin:180px 160px;transform:scale(.02);animation:hexDataGrow 320ms steps(9,end) 620ms forwards}
+.hex-chart-animated .hex-point{opacity:0;transform-box:view-box;transform-origin:center;transform:scale(0);animation:hexPointPop 80ms steps(2,end) forwards}
+.hex-chart-animated .hex-point-1{animation-delay:900ms}.hex-chart-animated .hex-point-2{animation-delay:935ms}.hex-chart-animated .hex-point-3{animation-delay:970ms}.hex-chart-animated .hex-point-4{animation-delay:1005ms}.hex-chart-animated .hex-point-5{animation-delay:1040ms}.hex-chart-animated .hex-point-6{animation-delay:1075ms}
+.hex-chart-animated .hex-label,.hex-chart-animated .hex-value{opacity:0}
+.hex-chart-animated .hex-label{animation:hexCopyIn 110ms steps(3,end) 1080ms forwards}
+.hex-chart-animated .hex-value{animation:hexCopyIn 110ms steps(3,end) 1160ms forwards}
+.result-reveal-copy{opacity:0;animation:hexCopyIn 130ms steps(3,end) 1260ms forwards}
+.score-grid.result-reveal-copy{animation-delay:1410ms}
+.actions.result-reveal-copy{animation-delay:1510ms}
+@keyframes hexBgIn{to{opacity:1}}
+@keyframes hexCenterPop{0%{opacity:0;transform:scale(0)}55%{opacity:1;transform:scale(2.3)}100%{opacity:1;transform:scale(1)}}
+@keyframes hexAxisDraw{to{stroke-dashoffset:0}}
+@keyframes hexRingGrow{0%{opacity:0;transform:scale(.02)}35%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes hexDataGrow{0%{opacity:0;transform:scale(.02)}18%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes hexPointPop{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:scale(1)}}
+@keyframes hexCopyIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.hex-chart-animated *, .result-reveal-copy{animation:none!important;opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}
