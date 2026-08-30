@@ -19,7 +19,7 @@ for(let i=0;i<3;i++){
   const wrap=new THREE.Group();wrap.rotation.y=aAngles[i];enhAGroup.add(wrap);
   const lip=new THREE.Mesh(new THREE.TorusGeometry(1.085,.026,3,6,aArcs[i]),new THREE.MeshPhongMaterial({color:0x72bee9,emissive:0x071723,transparent:true,opacity:0,flatShading:true,side:THREE.DoubleSide,shininess:34}));lip.rotation.x=Math.PI/2;lip.rotation.z=-aArcs[i]*.5;lip.position.y=BASE.rimY-.006;wrap.add(lip);
   const sheet=new THREE.Mesh(new THREE.BoxGeometry(.16,aLens[i],.025),new THREE.MeshPhongMaterial({color:0x61add8,emissive:0x06131e,transparent:true,opacity:0,flatShading:true,side:THREE.DoubleSide,shininess:22}));sheet.position.set(1.075,BASE.rimY-aLens[i]*.5-.018,0);sheet.rotation.y=Math.PI/2;wrap.add(sheet);
-  wrap.userData={lip,sheet,phase:i*.12,len:aLens[i]};
+  wrap.userData={lip,sheet,phase:i*.08,len:aLens[i]};
 }
 
 /* B: cheap kinematic square-water burst, seed-locked, then freezes. */
@@ -27,16 +27,16 @@ const enhBGroup=new THREE.Group();root.add(enhBGroup);
 const cubeGeo=new THREE.BoxGeometry(1,1,1),cubeMat=new THREE.MeshPhongMaterial({color:0x67b9e7,emissive:0x0a2433,transparent:true,opacity:.82,flatShading:true,shininess:18});
 let particleSeed=-1;
 for(let i=0;i<64;i++){const m=new THREE.Mesh(cubeGeo,cubeMat);m.visible=false;enhBGroup.add(m)}
-function reseedParticles(){particleSeed=seed;const r=rndFactory(seed+5150);enhBGroup.children.forEach((m,i)=>{const ang=r()*Math.PI*2,size=lerp(.035,.095,r());m.scale.set(size,size*lerp(.7,1.25,r()),size);m.userData={ang,delay:r()*.24,vr:lerp(.38,1.18,r()),vt:lerp(-.32,.32,r()),vy:lerp(.72,1.72,r()),spin:lerp(-5,5,r()),phase:r()*6.28};m.visible=false})}
+function reseedParticles(){particleSeed=seed;const r=rndFactory(seed+5150);enhBGroup.children.forEach(m=>{const ang=r()*Math.PI*2,size=lerp(.035,.095,r());m.scale.set(size,size*lerp(.7,1.25,r()),size);m.userData={ang,delay:r()*.20,vr:lerp(.38,1.18,r()),vt:lerp(-.32,.32,r()),vy:lerp(.72,1.72,r()),spin:lerp(-5,5,r()),phase:r()*6.28};m.visible=false})}
 function updateEnhAB(now){
   /* absolutely suppress v3/v4's old full-ring overflow objects. */
   model.overflow.children.forEach(x=>{x.visible=false;if(x.material)x.material.opacity=0});
   const active=stateType==='enhance'&&stateLevel===3;
   const p=firstDotAt?clamp((now-firstDotAt)/2150):0;
-  const overflowP=clamp((p-.64)/.36);
+  const overflowP=clamp((p-.82)/.18);
   enhAGroup.visible=active&&enh3Mode==='A';enhBGroup.visible=active&&enh3Mode==='B';
   if(enhAGroup.visible){enhAGroup.children.forEach((wrap,i)=>{const g=ease(clamp((overflowP-wrap.userData.phase)/(1-wrap.userData.phase)));wrap.userData.lip.material.opacity=.58*g;wrap.userData.sheet.material.opacity=.44*g;wrap.userData.sheet.scale.y=.12+.88*g;wrap.userData.sheet.position.y=BASE.rimY-(wrap.userData.len*(.12+.88*g))*.5-.018;wrap.rotation.z=Math.sin(now*.001*1.15+i)*.012*g})}
-  if(enhBGroup.visible){if(particleSeed!==seed)reseedParticles();const burst=clamp((p-.69)/.31);enhBGroup.children.forEach((m,i)=>{const d=m.userData,local=clamp((burst-d.delay)/(1-d.delay));if(local<=0){m.visible=false;return}m.visible=true;const t=local*1.28,ca=Math.cos(d.ang),sa=Math.sin(d.ang),tang=d.vt*t;const rad=1.055+d.vr*t;m.position.set(ca*rad-sa*tang,BASE.rimY+.015+d.vy*t-1.05*t*t,sa*rad+ca*tang);m.rotation.set(d.spin*t*.37+d.phase,d.spin*t*.23,d.spin*t*.31);const pop=clamp(local/.12);m.scale.multiplyScalar(1);m.material.opacity=.82*pop})}
+  if(enhBGroup.visible){if(particleSeed!==seed)reseedParticles();const burst=clamp((p-.82)/.18);enhBGroup.children.forEach(m=>{const d=m.userData,local=clamp((burst-d.delay)/(1-d.delay));if(local<=0){m.visible=false;return}m.visible=true;const t=local*1.28,ca=Math.cos(d.ang),sa=Math.sin(d.ang),tang=d.vt*t,rad=1.055+d.vr*t;m.position.set(ca*rad-sa*tang,BASE.rimY+.015+d.vy*t-1.05*t*t,sa*rad+ca*tang);m.rotation.set(d.spin*t*.37+d.phase,d.spin*t*.23,d.spin*t*.31)})
   }else enhBGroup.children.forEach(m=>m.visible=false);
 }
 let v5Last=0;function v5OverlayLoop(now){requestAnimationFrame(v5OverlayLoop);if(now-v5Last<1000/12)return;v5Last=now;updateEnhAB(now)}requestAnimationFrame(v5OverlayLoop);
