@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>HXH_ESP.Ver2 / v1 Release Candidate</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;overscroll-behavior:none}#app{position:fixed;inset:0;width:100%;height:100%;border:0;background:#000}
+</style>
+</head>
+<body>
+<iframe id="app" src="./full-interface-flow.html?rc=1" title="HXH ESP v1 release candidate"></iframe>
+<script>
+const frame=document.querySelector('#app');
+for(const name of ['gesturestart','gesturechange','gestureend'])document.addEventListener(name,e=>e.preventDefault(),{passive:false});
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+
+frame.addEventListener('load',()=>{
+  const doc=frame.contentDocument;
+  if(!doc)return;
+
+  const style=doc.createElement('style');
+  style.textContent=`
+    .labtag,#skip{display:none!important}
+    .home-card{max-height:calc(100svh - 44px);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+    .home-options{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows 180ms cubic-bezier(.2,.72,.28,1),opacity 120ms steps(2,end)}
+    .home-options.open{grid-template-rows:1fr;opacity:1}
+    .home-options-inner{min-height:0;overflow:hidden}
+    .home-options-panel{margin-top:10px;padding:12px;border:1px solid #363636;background:rgba(0,0,0,.90);text-align:left}
+    .opt-title{font-size:9px;letter-spacing:.14em;color:#777;margin-bottom:9px}
+    .opt-label{font-size:8px;letter-spacing:.10em;color:#666;margin:10px 0 5px}
+    .opt-seed{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+    .opt-seed input{width:100%;min-width:0;height:42px;border:1px solid #555;border-radius:0;background:#050505;color:#ddd;padding:8px 10px;font:16px ui-monospace,SFMono-Regular,Menlo,monospace;touch-action:manipulation}
+    .opt-seed button,.opt-grid button,.opt-preview-action{min-height:40px;padding:7px 9px;border-width:1px;font-size:10px}
+    .opt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+    .opt-grid button.on{background:#ddd;color:#000;border-color:#eee}
+    .opt-preview{margin-top:9px;height:180px;border:1px solid #2e2e2e;background:#000;overflow:hidden;position:relative}
+    .opt-preview iframe{display:block;width:100%;height:100%;border:0;background:#000;pointer-events:none}
+    .opt-status{margin-top:6px;min-height:28px;color:#666;font-size:8px;line-height:1.55;white-space:pre-line;word-break:break-all}
+    .opt-note{margin-top:7px;color:#4d4d4d;font-size:7px;line-height:1.55}
+    @media(max-width:420px){.home-card{width:92vw}.opt-preview{height:155px}}
+  `;
+  doc.head.appendChild(style);
+
+  const about=doc.querySelector('#about');
+  const menu=doc.querySelector('.home-menu');
+  if(!about||!menu)return;
+  about.textContent='選項';
+
+  const wrap=doc.createElement('div');
+  wrap.className='home-options';
+  wrap.innerHTML=`
+    <div class="home-options-inner">
+      <div class="home-options-panel">
+        <div class="opt-title">WATER DIVINATION PREVIEW</div>
+        <div class="opt-label">SEED</div>
+        <div class="opt-seed"><input id="rcSeed" inputmode="numeric" pattern="[0-9]*" value="381724" aria-label="水見式預覽 seed"><button id="rcRandomSeed" type="button">隨機</button></div>
+        <div class="opt-label">TYPE</div>
+        <div id="rcTypes" class="opt-grid"></div>
+        <div class="opt-label">LEVEL</div>
+        <div id="rcLevels" class="opt-grid"><button type="button" data-l="1">Lv1</button><button type="button" data-l="2" class="on">Lv2</button><button type="button" data-l="3">Lv3</button></div>
+        <button id="rcPreviewAction" class="opt-preview-action" type="button" style="width:100%;margin-top:9px">重播水見式</button>
+        <div class="opt-preview"><iframe id="rcPreviewFrame" title="水見式效果預覽"></iframe></div>
+        <div id="rcStatus" class="opt-status">選擇系別／等級後會直接預覽。</div>
+        <div class="opt-note">這裡只預覽水見式，不會覆寫測驗正式結果的 deterministic seed。</div>
+      </div>
+    </div>`;
+  menu.insertAdjacentElement('afterend',wrap);
+
+  const typeNames={強:'enhance',變:'transmute',具:'conjure',特:'specialize',操:'manipulate',放:'emit'};
+  const anomalyZh={wither:'葉片枯萎',boil:'水沸騰',clone:'葉片複製',hover:'異常浮升',glitch:'整杯劇烈震動',echo:'多重水面殘影',pulse:'水體脈動膨縮',blackwater:'黑水化',reverse:'反重力水面',timeskip:'時間跳格'};
+  let type='特',level=2,loadToken=0;
+  const types=wrap.querySelector('#rcTypes'),levels=wrap.querySelector('#rcLevels'),seedInput=wrap.querySelector('#rcSeed'),preview=wrap.querySelector('#rcPreviewFrame'),status=wrap.querySelector('#rcStatus');
+  types.innerHTML=Object.keys(typeNames).map(k=>`<button type="button" data-t="${k}" class="${k===type?'on':''}">${k}</button>`).join('');
+
+  function seedValue(){
+    let n=Number(seedInput.value);
+    if(!Number.isFinite(n))n=381724;
+    n=Math.max(1,Math.min(4294967295,Math.trunc(n)));
+    seedInput.value=String(n);
+    return n>>>0||1;
+  }
+  function syncButtons(){
+    types.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.t===type));
+    levels.querySelectorAll('button').forEach(b=>b.classList.toggle('on',Number(b.dataset.l)===level));
+  }
+  function loadPreview(){
+    const token=++loadToken,seed=seedValue(),p=new URLSearchParams({type:typeNames[type],level:String(level),seed:String(seed)});
+    status.textContent=`${type} / Lv${level} / SEED ${seed}\n載入中…`;
+    preview.src=`./water-divination-runtime.html?${p.toString()}&rc=${Date.now()}`;
+    preview.onload=()=>{
+      const pdoc=preview.contentDocument;
+      if(pdoc){const s=pdoc.createElement('style');s.textContent='.ui,.back,#result{display:none!important}.reveal{bottom:8%!important;font-size:13px!important}';pdoc.head.appendChild(s)}
+      const started=performance.now();
+      const poll=()=>{
+        if(token!==loadToken)return;
+        const rt=preview.contentWindow?.__WATER_RUNTIME__;
+        if(rt?.ready){
+          const anomalies=(rt.anomalies||[]).map(x=>anomalyZh[x]||x).join('、')||'—';
+          const secs=(rt.secondaries||[]).map(x=>`${x.type}:Lv${x.level}`).join('、')||'—';
+          status.textContent=`${type} / Lv${level} / SEED ${rt.seed}\nANOMALY ${anomalies}${type==='特'?`\nSECONDARY ${secs}`:''}`;
+          return;
+        }
+        if(performance.now()-started<7000)setTimeout(poll,70);else status.textContent='預覽載入逾時，請再重播一次。';
+      };
+      poll();
+    };
+  }
+
+  about.onclick=()=>{
+    const open=!wrap.classList.contains('open');
+    wrap.classList.toggle('open',open);
+    about.textContent=open?'關閉選項':'選項';
+    if(open&&!preview.src)loadPreview();
+  };
+  types.addEventListener('click',e=>{const b=e.target.closest('button[data-t]');if(!b)return;type=b.dataset.t;syncButtons();loadPreview()});
+  levels.addEventListener('click',e=>{const b=e.target.closest('button[data-l]');if(!b)return;level=Number(b.dataset.l);syncButtons();loadPreview()});
+  wrap.querySelector('#rcRandomSeed').onclick=()=>{seedInput.value=String((Math.floor(Math.random()*4294967294)+1)>>>0||1);loadPreview()};
+  wrap.querySelector('#rcPreviewAction').onclick=loadPreview;
+  seedInput.addEventListener('change',loadPreview);
+
+  const originalStart=doc.querySelector('#start')?.onclick;
+  const start=doc.querySelector('#start');
+  if(start)start.onclick=e=>{wrap.classList.remove('open');if(typeof originalStart==='function')originalStart.call(start,e)};
+});
+</script>
+</body>
+</html>
