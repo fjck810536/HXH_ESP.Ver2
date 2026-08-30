@@ -9,7 +9,7 @@ function dockMultiConfirm(){
   dock.classList.add('has-confirm');
 }
 
-function animatePush(items,before){
+function animatePush(items,before,{duration,easing}){
   items.forEach(el=>{
     const a=before.get(el),b=el.getBoundingClientRect();
     if(!a||!b)return;
@@ -17,7 +17,7 @@ function animatePush(items,before){
     if(Math.abs(dx)<.5&&Math.abs(dy)<.5)return;
     el.animate(
       [{transform:`translate3d(${dx}px,${dy}px,0)`},{transform:'translate3d(0,0,0)'}],
-      {duration:70,easing:'linear',fill:'both'}
+      {duration,easing,fill:'both'}
     );
   });
 }
@@ -36,6 +36,11 @@ function revealStack(){
   const items=[...box.children];
   if(!items.length)return;
 
+  const isMulti=box.classList.contains('multi-options');
+  const timing=isMulti
+    ? {push:150,incoming:170,gap:170,easing:'cubic-bezier(.2,.72,.28,1)',lift:34}
+    : {push:70,incoming:70,gap:75,easing:'linear',lift:28};
+
   items.forEach(el=>{
     el.classList.add('stack-bubble','stack-hidden');
     el.getAnimations().forEach(a=>a.cancel());
@@ -52,22 +57,20 @@ function revealStack(){
     incoming.classList.remove('stack-hidden');
     incoming.getBoundingClientRect();
 
-    // Always follow the newest option. Once the stack is taller than the viewport,
-    // older choices are pushed through the top edge while the newest remains at the bottom.
     pinToBottom(scroll);
     incoming.getBoundingClientRect();
-    animatePush(shown,before);
+    animatePush(shown,before,{duration:timing.push,easing:timing.easing});
 
     incoming.animate(
-      [{opacity:0,transform:'translate3d(0,28px,0)'},{opacity:1,transform:'translate3d(0,0,0)'}],
-      {duration:70,easing:'linear',fill:'both'}
+      [{opacity:0,transform:`translate3d(0,${timing.lift}px,0)`},{opacity:1,transform:'translate3d(0,0,0)'}],
+      {duration:timing.incoming,easing:timing.easing,fill:'both'}
     );
     shown.push(incoming);
 
-    if(index+1<items.length)setTimeout(()=>showOne(index+1),75);
+    if(index+1<items.length)setTimeout(()=>showOne(index+1),timing.gap);
   }
 
-  setTimeout(()=>showOne(0),55);
+  setTimeout(()=>showOne(0),isMulti?80:55);
 }
 
 function enhanceQuestion(){
