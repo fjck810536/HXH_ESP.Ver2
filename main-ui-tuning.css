@@ -1,13 +1,15 @@
 :root{--dock-max:42vh}
 
-/* OPTION FIELD = one bottom-anchored message stream.
-   As new choices arrive, older choices are pushed upward and eventually leave the viewport.
-   After the reveal finishes, the field remains freely scrollable. */
+/* OPTION FIELD = one message stream. Two collapsible flex spacers center a short stack
+   without using auto margins (which can trap overflow at the flex-start edge on iOS).
+   As choices accumulate the spacers collapse to zero; after that the real scroll range
+   grows upward and older choices can be pushed completely past the top edge. */
 .option-scroll{display:flex!important;flex-direction:column!important;justify-content:flex-start!important;overflow-y:auto!important;overscroll-behavior:contain!important;padding:14px clamp(10px,3vw,24px) 12px!important}
-.single-options,.multi-options{min-height:0!important;margin-top:auto!important;margin-bottom:0!important;overflow:visible!important}
+.option-scroll::before,.option-scroll::after{content:"";display:block;flex:1 1 0;min-height:0;pointer-events:none}
+.single-options,.multi-options{min-height:0!important;margin-top:0!important;margin-bottom:0!important;overflow:visible!important;flex:0 0 auto!important}
 .single-options,.multi-options{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:16px!important;padding:18px 4px 10px!important}
 
-/* MULTI SELECT now uses the same speech-box language as single select.
+/* MULTI SELECT uses the same speech-box language as single select.
    The small square is only a state affordance; the container shape is identical. */
 label.option.thought{position:relative!important;display:flex!important;align-items:center!important;gap:10px!important;min-height:50px!important;margin-top:0!important;margin-left:0!important;margin-right:0!important;padding:12px 14px!important;border:2px solid #626262!important;border-radius:3px 2px 2px 1px!important;background:#050505!important;color:#d0d0d0!important;line-height:1.55!important;cursor:pointer!important;grid-column:auto!important;justify-self:auto!important}
 label.option.thought:nth-child(odd){align-self:flex-start!important;width:min(92%,650px)!important}
