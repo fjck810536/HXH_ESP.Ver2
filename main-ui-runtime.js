@@ -17,9 +17,14 @@ function animatePush(items,before){
     if(Math.abs(dx)<.5&&Math.abs(dy)<.5)return;
     el.animate(
       [{transform:`translate3d(${dx}px,${dy}px,0)`},{transform:'translate3d(0,0,0)'}],
-      {duration:210,easing:'cubic-bezier(.2,.72,.28,1)',fill:'both'}
+      {duration:70,easing:'linear',fill:'both'}
     );
   });
+}
+
+function pinToBottom(scroll){
+  const target=Math.max(0,scroll.scrollHeight-scroll.clientHeight);
+  scroll.scrollTop=target;
 }
 
 function revealStack(){
@@ -36,7 +41,6 @@ function revealStack(){
     el.getAnimations().forEach(a=>a.cancel());
   });
 
-  // Start from the true center. Each new bubble joins the stack and pushes older ones upward.
   requestAnimationFrame(()=>{scroll.scrollTop=0;});
   const shown=[];
 
@@ -44,23 +48,26 @@ function revealStack(){
     if(run!==stackRun||!box.isConnected||index>=items.length)return;
     const incoming=items[index];
     const before=new Map(shown.map(el=>[el,el.getBoundingClientRect()]));
-    incoming.classList.remove('stack-hidden');
 
+    incoming.classList.remove('stack-hidden');
+    incoming.getBoundingClientRect();
+
+    // Always follow the newest option. Once the stack is taller than the viewport,
+    // older choices are pushed through the top edge while the newest remains at the bottom.
+    pinToBottom(scroll);
     incoming.getBoundingClientRect();
     animatePush(shown,before);
+
     incoming.animate(
-      [{opacity:0,transform:'translate3d(0,72px,0)'},{opacity:1,transform:'translate3d(0,0,0)'}],
-      {duration:300,easing:'cubic-bezier(.18,.70,.24,1)',fill:'both'}
+      [{opacity:0,transform:'translate3d(0,28px,0)'},{opacity:1,transform:'translate3d(0,0,0)'}],
+      {duration:70,easing:'linear',fill:'both'}
     );
     shown.push(incoming);
 
-    if(index+1<items.length){
-      const gap=items.length>=9?185:75;
-      setTimeout(()=>showOne(index+1),gap);
-    }
+    if(index+1<items.length)setTimeout(()=>showOne(index+1),75);
   }
 
-  setTimeout(()=>showOne(0),70);
+  setTimeout(()=>showOne(0),55);
 }
 
 function enhanceQuestion(){
