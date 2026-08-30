@@ -57,8 +57,11 @@ function revealStack(){
     incoming.classList.remove('stack-hidden');
     incoming.getBoundingClientRect();
 
-    pinToBottom(scroll);
-    incoming.getBoundingClientRect();
+    // Multi-select follows the newest item at the bottom. Single-select must stay a true centered stack.
+    if(isMulti){
+      pinToBottom(scroll);
+      incoming.getBoundingClientRect();
+    }
     animatePush(shown,before,{duration:timing.push,easing:timing.easing});
 
     incoming.animate(
