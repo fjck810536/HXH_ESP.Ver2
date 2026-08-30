@@ -7,6 +7,9 @@
 .single-options,.multi-options{min-height:0!important;margin-top:auto!important;margin-bottom:0!important;overflow:visible!important}
 .single-options,.multi-options{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:16px!important;padding:18px 4px 10px!important}
 
+/* SINGLE SELECT returns to the stable centered stack. Multi-select keeps its own bottom-flow layout. */
+.single-options{margin-top:auto!important;margin-bottom:auto!important}
+
 /* MULTI SELECT now uses the same speech-box language as single select.
    The small square is only a state affordance; the container shape is identical. */
 label.option.thought{position:relative!important;display:flex!important;align-items:center!important;gap:10px!important;min-height:50px!important;margin-top:0!important;margin-left:0!important;margin-right:0!important;padding:12px 14px!important;border:2px solid #626262!important;border-radius:3px 2px 2px 1px!important;background:#050505!important;color:#d0d0d0!important;line-height:1.55!important;cursor:pointer!important;grid-column:auto!important;justify-self:auto!important}
