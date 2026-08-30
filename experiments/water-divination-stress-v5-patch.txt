@@ -1,18 +1,20 @@
 
-/* v5 A/B overlay: no string patching; overrides live bindings from v4 module. */
-NOTE.enhance='水量增加（Lv3 A/B：局部低模溢流 / 方塊水粒子）';
+/* v5 seeded dual-result overlay: A is locked local overflow; B is a finite square-water burst. */
+NOTE.enhance='水量增加（Lv3 由 seed 抽選：局部低模溢流 / 方塊水粒子）';
 let enh3Mode='A';
+function pickEnh3Mode(localSeed=seed){return rndFactory(localSeed+4444)()>.5?'A':'B'}
 const v5EffectBase=effect;
 effect=function(type,level,p){const o=v5EffectBase(type,level,p),q=ease(p);if(type==='emit'&&level===1)o.hm=.28*q;if(type==='enhance'&&level===3){o.rise=.73*q;o.ov=0}return o};
 const v5DebugBase=updateDebug;
-updateDebug=function(){v5DebugBase();if(stateType==='enhance'&&stateLevel===3)debugEl.textContent+=` / ENH3 ${enh3Mode}`};
-const enhA=document.querySelector('#enh3A'),enhB=document.querySelector('#enh3B');
-function syncEnhButtons(){if(enhA)enhA.classList.toggle('on',enh3Mode==='A');if(enhB)enhB.classList.toggle('on',enh3Mode==='B')}
-if(enhA)enhA.onclick=()=>{enh3Mode='A';syncEnhButtons();shown=false;prepareRun()};
-if(enhB)enhB.onclick=()=>{enh3Mode='B';syncEnhButtons();shown=false;prepareRun()};
-syncEnhButtons();
+updateDebug=function(){v5DebugBase();if(stateType==='enhance'&&stateLevel===3)debugEl.textContent+=` / ENH3 SEED-${enh3Mode}`};
+const enhSeeded=document.querySelector('#enhSeeded');
+function syncEnhSeeded(){if(enhSeeded)enhSeeded.textContent=`SEED → ${enh3Mode==='A'?'局部溢流':'方塊噴出'}`}
+const v5PrepareBase=prepareRun;
+prepareRun=function(){enh3Mode=pickEnh3Mode(seed);syncEnhSeeded();v5PrepareBase()};
+const v5ShowResultBase=showResult;
+showResult=function(){v5ShowResultBase();if(stateType==='enhance'&&stateLevel===3)resultNote.textContent+=`\nSEED → ${enh3Mode==='A'?'局部溢流':'方塊噴出'}`};
 
-/* A: only local rim lips + local outside sheets. Never a complete torus/ring. */
+/* A: LOCKED. Only local rim lips + local outside sheets. Never a complete torus/ring. */
 const enhAGroup=new THREE.Group();root.add(enhAGroup);
 const aAngles=[.28,2.05,4.45],aArcs=[.62,.48,.72],aLens=[.72,.45,.58];
 for(let i=0;i<3;i++){
@@ -22,22 +24,25 @@ for(let i=0;i<3;i++){
   wrap.userData={lip,sheet,phase:i*.08,len:aLens[i]};
 }
 
-/* B: cheap kinematic square-water burst, seed-locked, then freezes. */
+/* B: cheap kinematic square-water burst. Seed fixes trajectories; particles leave frame and disappear. */
 const enhBGroup=new THREE.Group();root.add(enhBGroup);
 const cubeGeo=new THREE.BoxGeometry(1,1,1),cubeMat=new THREE.MeshPhongMaterial({color:0x67b9e7,emissive:0x0a2433,transparent:true,opacity:.82,flatShading:true,shininess:18});
 let particleSeed=-1;
 for(let i=0;i<64;i++){const m=new THREE.Mesh(cubeGeo,cubeMat);m.visible=false;enhBGroup.add(m)}
-function reseedParticles(){particleSeed=seed;const r=rndFactory(seed+5150);enhBGroup.children.forEach(m=>{const ang=r()*Math.PI*2,size=lerp(.035,.095,r());m.scale.set(size,size*lerp(.7,1.25,r()),size);m.userData={ang,delay:r()*.20,vr:lerp(.38,1.18,r()),vt:lerp(-.32,.32,r()),vy:lerp(.72,1.72,r()),spin:lerp(-5,5,r()),phase:r()*6.28};m.visible=false})}
-function updateEnhAB(now){
-  /* absolutely suppress v3/v4's old full-ring overflow objects. */
+function reseedParticles(){particleSeed=seed;const r=rndFactory(seed+5150);enhBGroup.children.forEach(m=>{const ang=r()*Math.PI*2,size=lerp(.035,.095,r());m.scale.set(size,size*lerp(.7,1.25,r()),size);m.userData={ang,delay:r()*.32,vr:lerp(.48,1.35,r()),vt:lerp(-.38,.38,r()),vy:lerp(.85,1.95,r()),spin:lerp(-5,5,r()),phase:r()*6.28};m.visible=false})}
+function updateEnhSeeded(now){
+  /* suppress the old v3/v4 full-ring overflow objects completely. */
   model.overflow.children.forEach(x=>{x.visible=false;if(x.material)x.material.opacity=0});
   const active=stateType==='enhance'&&stateLevel===3;
   const p=firstDotAt?clamp((now-firstDotAt)/2150):0;
   const overflowP=clamp((p-.82)/.18);
   enhAGroup.visible=active&&enh3Mode==='A';enhBGroup.visible=active&&enh3Mode==='B';
   if(enhAGroup.visible){enhAGroup.children.forEach((wrap,i)=>{const g=ease(clamp((overflowP-wrap.userData.phase)/(1-wrap.userData.phase)));wrap.userData.lip.material.opacity=.58*g;wrap.userData.sheet.material.opacity=.44*g;wrap.userData.sheet.scale.y=.12+.88*g;wrap.userData.sheet.position.y=BASE.rimY-(wrap.userData.len*(.12+.88*g))*.5-.018;wrap.rotation.z=Math.sin(now*.001*1.15+i)*.012*g})}
-  if(enhBGroup.visible){if(particleSeed!==seed)reseedParticles();const burst=clamp((p-.82)/.18);enhBGroup.children.forEach(m=>{const d=m.userData,local=clamp((burst-d.delay)/(1-d.delay));if(local<=0){m.visible=false;return}m.visible=true;const t=local*1.28,ca=Math.cos(d.ang),sa=Math.sin(d.ang),tang=d.vt*t,rad=1.055+d.vr*t;m.position.set(ca*rad-sa*tang,BASE.rimY+.015+d.vy*t-1.05*t*t,sa*rad+ca*tang);m.rotation.set(d.spin*t*.37+d.phase,d.spin*t*.23,d.spin*t*.31)})
+  if(enhBGroup.visible){
+    if(particleSeed!==seed)reseedParticles();
+    const elapsed=Math.max(0,(now-firstDotAt)/1000),launchAt=1.76;
+    enhBGroup.children.forEach(m=>{const d=m.userData,t=elapsed-launchAt-d.delay;if(t<=0){m.visible=false;return}const ca=Math.cos(d.ang),sa=Math.sin(d.ang),tang=d.vt*t,rad=1.055+d.vr*t,x=ca*rad-sa*tang,y=BASE.rimY+.015+d.vy*t-1.08*t*t,z=sa*rad+ca*tang;m.position.set(x,y,z);m.rotation.set(d.spin*t*.37+d.phase,d.spin*t*.23,d.spin*t*.31);m.visible=t<3.6&&y>-3.0&&y<4.0&&Math.hypot(x,z)<5.2})
   }else enhBGroup.children.forEach(m=>m.visible=false);
 }
-let v5Last=0;function v5OverlayLoop(now){requestAnimationFrame(v5OverlayLoop);if(now-v5Last<1000/12)return;v5Last=now;updateEnhAB(now)}requestAnimationFrame(v5OverlayLoop);
+let v5Last=0;function v5OverlayLoop(now){requestAnimationFrame(v5OverlayLoop);if(now-v5Last<1000/12)return;v5Last=now;updateEnhSeeded(now)}requestAnimationFrame(v5OverlayLoop);
 prepareRun();
