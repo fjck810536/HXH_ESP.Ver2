@@ -23,37 +23,48 @@ function animatePush(items,before,{duration,easing}){
   });
 }
 
-function easeOutCubic(t){return 1-Math.pow(1-t,3);}
-
-function animateScrollTo(scroll,target,duration){
-  const start=scroll.scrollTop;
-  const delta=target-start;
-  if(Math.abs(delta)<.5){scroll.scrollTop=target;return;}
-  const begin=performance.now();
-  function frame(now){
-    const p=Math.min(1,(now-begin)/duration);
-    scroll.scrollTop=start+delta*easeOutCubic(p);
-    if(p<1)requestAnimationFrame(frame);
-    else scroll.scrollTop=target;
-  }
-  requestAnimationFrame(frame);
-}
-
-function animateGroupShift(box,dy,duration){
-  if(Math.abs(dy)<.5)return;
-  const anim=box.animate(
-    [{transform:`translate3d(0,${dy}px,0)`},{transform:'translate3d(0,0,0)'}],
-    {duration,easing:'cubic-bezier(.2,.72,.28,1)',fill:'both'}
-  );
-  anim.finished.then(()=>anim.cancel()).catch(()=>{});
-}
-
 function animateIncoming(el,duration,lift,easing){
   const anim=el.animate(
     [{opacity:0,transform:`translate3d(0,${lift}px,0)`},{opacity:1,transform:'translate3d(0,0,0)'}],
     {duration,easing,fill:'both'}
   );
   anim.finished.then(()=>anim.cancel()).catch(()=>{});
+}
+
+function revealMulti(box,scroll,items,run){
+  /*
+    MULTI SELECT ONLY:
+    Remove every option from layout first, then append exactly one option per tick.
+    No FLIP, no group transform, no smooth scroll, no animation on old options.
+  */
+  items.forEach(el=>{
+    el.getAnimations().forEach(a=>a.cancel());
+    el.classList.add('stack-bubble');
+    el.classList.remove('stack-hidden');
+  });
+
+  box.replaceChildren();
+  scroll.scrollTop=0;
+
+  const gap=500;
+  const incomingDuration=180;
+
+  function showOne(index){
+    if(run!==stackRun||!box.isConnected||index>=items.length)return;
+    const incoming=items[index];
+
+    box.appendChild(incoming);
+
+    /* Keep only the newest option visible at the bottom once content overflows. */
+    const target=Math.max(0,scroll.scrollHeight-scroll.clientHeight);
+    scroll.scrollTop=target;
+
+    animateIncoming(incoming,incomingDuration,14,'cubic-bezier(.2,.72,.28,1)');
+
+    if(index+1<items.length)setTimeout(()=>showOne(index+1),gap);
+  }
+
+  setTimeout(()=>showOne(0),160);
 }
 
 function revealStack(){
@@ -66,53 +77,18 @@ function revealStack(){
   if(!items.length)return;
 
   const isMulti=box.classList.contains('multi-options');
-
-  items.forEach(el=>{
-    el.classList.add('stack-bubble','stack-hidden');
-    el.getAnimations().forEach(a=>a.cancel());
-  });
-
-  requestAnimationFrame(()=>{scroll.scrollTop=0;});
-
   if(isMulti){
-    /*
-      MULTI SELECT ONLY.
-      Unrevealed options are now truly display:none, so each option enters the layout once.
-      Keep the cadence deliberately readable while we validate the no-jitter baseline.
-    */
-    const motion=240;
-    const gap=420;
-    const shown=[];
-
-    function showMulti(index){
-      if(run!==stackRun||!box.isConnected||index>=items.length)return;
-      const incoming=items[index];
-      const beforeBox=box.getBoundingClientRect();
-      const beforeScroll=scroll.scrollTop;
-
-      shown.forEach(el=>el.getAnimations().forEach(a=>a.cancel()));
-
-      incoming.classList.remove('stack-hidden');
-      const afterBox=box.getBoundingClientRect();
-      const target=Math.max(0,scroll.scrollHeight-scroll.clientHeight);
-
-      if(target>beforeScroll+.5){
-        animateScrollTo(scroll,target,motion);
-      }else{
-        animateGroupShift(box,beforeBox.top-afterBox.top,motion);
-      }
-
-      animateIncoming(incoming,220,24,'cubic-bezier(.2,.72,.28,1)');
-      shown.push(incoming);
-
-      if(index+1<items.length)setTimeout(()=>showMulti(index+1),gap);
-    }
-
-    setTimeout(()=>showMulti(0),140);
+    revealMulti(box,scroll,items,run);
     return;
   }
 
   /* SINGLE SELECT: locked centered-stack behavior. */
+  items.forEach(el=>{
+    el.classList.add('stack-bubble','stack-hidden');
+    el.getAnimations().forEach(a=>a.cancel());
+  });
+  requestAnimationFrame(()=>{scroll.scrollTop=0;});
+
   const timing={push:70,incoming:70,gap:75,easing:'linear',lift:28};
   const shown=[];
 
