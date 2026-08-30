@@ -36,6 +36,9 @@ label.option.thought.selected input[type="checkbox"]{border-color:#000!important
 /* Runtime owns reveal and push motion. */
 .stack-bubble{animation:none!important;will-change:auto!important}
 .stack-hidden{display:none!important}
+/* IMPORTANT: multi option boxes themselves declare display:flex!important with higher specificity.
+   This stronger rule makes unrevealed multi-select options truly absent from layout. */
+.multi-options label.option.thought.stack-hidden{display:none!important}
 
 /* Multi-select confirmation stays INSIDE the fixed question frame, bottom-right. */
 .question-dock.has-confirm{position:relative!important;display:block!important}
