@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>HXH_ESP.Ver2 / FULL SYSTEM QA</title>
+<style>
+:root{color-scheme:dark;--bg:#000;--fg:#e4e4e4;--muted:#777;--line:#4b4b4b;--panel:rgba(3,3,3,.94);--hot:#dedede}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:var(--fg);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,"Noto Sans Mono CJK TC","Noto Sans TC",monospace;-webkit-text-size-adjust:100%;touch-action:none;overscroll-behavior:none}
+button,input{font:inherit}button{appearance:none;border:1px solid #555;border-radius:0;background:#080808;color:#aaa;min-height:34px;padding:6px 9px;touch-action:manipulation;-webkit-user-select:none;user-select:none}button:active,button.on{background:#ddd;color:#000;border-color:#eee}input{min-height:38px;width:100%;border:1px solid #555;border-radius:0;background:#050505;color:#ddd;padding:7px 9px;font-size:16px;touch-action:manipulation}
+#appFrame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#000;z-index:0}
+#liveMonitor{position:fixed;z-index:80;right:8px;top:calc(8px + env(safe-area-inset-top));width:min(47vw,190px);padding:8px 8px 7px;background:rgba(0,0,0,.82);border:1px solid #303030;pointer-events:none;backdrop-filter:blur(2px)}
+.mon-head{display:flex;justify-content:space-between;gap:6px;align-items:baseline;margin-bottom:6px}.mon-title{font-size:8px;letter-spacing:.14em;color:#888}.mon-sum{font-size:9px;color:#aaa}.mon-row{display:grid;grid-template-columns:18px 32px 1fr 34px;gap:4px;align-items:center;font-size:8px;line-height:1.25;margin:3px 0}.mon-type{color:#bbb}.mon-raw{text-align:right;color:#ddd}.mon-pct{text-align:right;color:#777}.bar{height:3px;background:#161616;overflow:hidden}.bar>i{display:block;height:100%;background:#777;width:0}.mon-foot{display:grid;gap:2px;margin-top:6px;padding-top:5px;border-top:1px dashed #333;font-size:7px;color:#666;word-break:break-all}.mon-foot b{font-weight:500;color:#999}
+#debugToggle{position:fixed;z-index:100;left:8px;top:calc(8px + env(safe-area-inset-top));min-height:27px;padding:3px 7px;font-size:8px;opacity:.72;border-color:#353535;background:#000d;color:#777}
+#debugDrawer{position:fixed;z-index:99;left:8px;top:calc(42px + env(safe-area-inset-top));width:min(92vw,430px);max-height:calc(100% - 58px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:11px;background:var(--panel);border:1px solid #3b3b3b;transform:translateX(calc(-100% - 18px));opacity:0;pointer-events:none;transition:transform 180ms cubic-bezier(.2,.72,.28,1),opacity 120ms steps(2,end)}
+#debugDrawer.open{transform:none;opacity:1;pointer-events:auto}.qa-head{display:flex;justify-content:space-between;gap:10px;align-items:start;margin-bottom:10px}.qa-title{font-size:11px;letter-spacing:.14em}.qa-sub{font-size:8px;color:#666;line-height:1.5}.section{border-top:1px dashed #343434;padding-top:9px;margin-top:9px}.section-title{font-size:8px;letter-spacing:.13em;color:#777;margin-bottom:7px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.seedline{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:5px;align-items:center}.qa-result{font-size:8px;line-height:1.55;color:#777;white-space:pre-line;padding:7px;background:#030303;border:1px solid #292929;min-height:54px}.qa-result strong{color:#bbb;font-weight:500}.score-table{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.score-chip{border:1px solid #2d2d2d;background:#050505;padding:5px;font-size:8px;line-height:1.4}.score-chip b{display:block;color:#bbb;font-size:10px}.preview-wrap{height:250px;border:1px solid #303030;background:#000;position:relative;overflow:hidden}.preview-wrap iframe{width:100%;height:100%;border:0;background:#000;display:block}.preview-status{margin-top:6px;font-size:8px;line-height:1.55;color:#777;white-space:pre-line;word-break:break-word}.hint{margin-top:6px;font-size:7px;line-height:1.5;color:#555}
+@media(max-width:360px){#liveMonitor{width:46vw}.mon-row{grid-template-columns:15px 27px 1fr 30px;gap:3px}.type-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<iframe id="appFrame" src="./full-interface-flow.html?qa=1" title="HXH ESP full flow"></iframe>
+<aside id="liveMonitor" aria-label="即時分數監測">
+  <div class="mon-head"><span class="mon-title">LIVE SCORE</span><span id="liveSum" class="mon-sum">Σ 0</span></div>
+  <div id="liveRows"></div>
+  <div class="mon-foot"><span>WIN <b id="liveWinner">—</b></span><span>LV <b id="liveLevel">—</b></span><span>SEED <b id="liveSeed">2166136261</b></span></div>
+</aside>
+<button id="debugToggle" type="button" aria-expanded="false">QA ▸</button>
+<aside id="debugDrawer" aria-label="QA Debug 平台">
+  <div class="qa-head"><div><div class="qa-title">FULL SYSTEM QA</div><div class="qa-sub">LIVE 計分監控／合法隨機結果／seed 與水見式 runtime</div></div><button id="closeDebug" type="button">×</button></div>
+
+  <div class="section">
+    <div class="section-title">QA RESULT SOURCE</div>
+    <div class="grid2"><button id="useLive" type="button">使用 LIVE 分數</button><button id="randomResult" type="button">隨機生成合法結果</button></div>
+    <div id="qaScores" class="score-table" style="margin-top:6px"></div>
+    <div id="qaSummary" class="qa-result" style="margin-top:6px"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">SEED</div>
+    <div class="seedline"><input id="seedInput" inputmode="numeric" pattern="[0-9]*" aria-label="測試 seed"><button id="useDerivedSeed" type="button">結果 SEED</button><button id="randomSeed" type="button">隨機 SEED</button></div>
+    <div class="hint">輸入範圍 1–4294967295。手動 seed 只影響 QA 預覽，不會改寫 LIVE 答題分數。</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">TYPE / LEVEL — 點擊即重播</div>
+    <div id="typeButtons" class="type-grid"></div>
+    <div id="levelButtons" class="grid3" style="margin-top:5px"><button type="button" data-level="1">Lv1</button><button type="button" data-level="2">Lv2</button><button type="button" data-level="3">Lv3</button></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">SEED → WATER RESULT</div>
+    <div class="preview-wrap"><iframe id="waterPreview" title="QA water preview"></iframe></div>
+    <div id="runtimeStatus" class="preview-status">等待預覽…</div>
+  </div>
+</aside>
+<script type="module">
+import {QUESTIONS,NEXT,TYPES,TYPE_NAMES} from '../main-quiz-data.js';
+
+const MAX={強:520,操:525,放:520,具:525,變:520,特:520};
+const V5={強:'enhance',變:'transmute',具:'conjure',特:'specialize',操:'manipulate',放:'emit'};
+const ZH={wither:'葉片枯萎',boil:'水沸騰',clone:'葉片複製',hover:'異常浮升',glitch:'整杯劇烈震動',echo:'多重水面殘影',pulse:'水體脈動膨縮',blackwater:'黑水化',reverse:'反重力水面',timeskip:'時間跳格'};
+const clean=()=>Object.fromEntries(TYPES.map(k=>[k,0]));
+const clone=s=>Object.fromEntries(TYPES.map(k=>[k,Number(s[k])||0]));
+const add=(s,score)=>{for(const[k,v]of Object.entries(score||{}))s[k]=(s[k]||0)+v};
+const normalized=s=>Object.fromEntries(TYPES.map(k=>[k,Math.max(0,Math.min(100,(s[k]/MAX[k])*100))]));
+const winner=s=>TYPES.reduce((a,b)=>s[b]>s[a]?b:a,TYPES[0]);
+const waterLevel=p=>p<40?1:p<70?2:3;
+const secLevel=p=>p<30?0:p<55?1:p<80?2:3;
+const seedFor=s=>{let h=2166136261>>>0;for(const k of ['強','操','放','具','變','特']){const v=Math.max(0,Math.round(s[k]))>>>0;for(let shift=0;shift<32;shift+=8){h^=(v>>>shift)&255;h=Math.imul(h,16777619)>>>0}}return h||1};
+const resultData=s=>{const n=normalized(s),win=winner(s),level=waterLevel(n[win]);const secondaries=TYPES.filter(k=>k!=='特').map((k,i)=>({type:k,p:n[k],order:i})).sort((a,b)=>b.p-a.p||a.order-b.order).slice(0,2).map(x=>({...x,level:secLevel(x.p)}));return{scores:clone(s),n,win,level,seed:seedFor(s),secondaries}};
+const stripQuestion=text=>String(text||'').replace(/^－－+[\s\S]*?Q\d+\s*/,'').replace(/^Q\d+\s*/,'').trim();
+const questionByText=new Map(Object.entries(QUESTIONS).map(([k,q])=>[stripQuestion(q.text),k]));
+
+const appFrame=document.querySelector('#appFrame'),liveRows=document.querySelector('#liveRows'),liveSum=document.querySelector('#liveSum'),liveWinner=document.querySelector('#liveWinner'),liveLevel=document.querySelector('#liveLevel'),liveSeed=document.querySelector('#liveSeed');
+const drawer=document.querySelector('#debugDrawer'),toggle=document.querySelector('#debugToggle'),closeDebug=document.querySelector('#closeDebug'),qaScores=document.querySelector('#qaScores'),qaSummary=document.querySelector('#qaSummary'),seedInput=document.querySelector('#seedInput'),waterPreview=document.querySelector('#waterPreview'),runtimeStatus=document.querySelector('#runtimeStatus');
+let liveScores=clean(),qaData=resultData(clean()),previewType='特',previewLevel=3,manualSeed=null,committedSingles=new Set(),committedMulti=new Set();
+
+function renderRows(host,data){const n=normalized(data);host.innerHTML=TYPES.map(k=>`<div class="mon-row"><span class="mon-type">${k}</span><span class="mon-raw">${data[k]}</span><span class="bar"><i style="width:${n[k].toFixed(2)}%"></i></span><span class="mon-pct">${n[k].toFixed(0)}%</span></div>`).join('')}
+function renderLive(){renderRows(liveRows,liveScores);const d=resultData(liveScores),sum=TYPES.reduce((a,k)=>a+liveScores[k],0);liveSum.textContent=`Σ ${sum}`;liveWinner.textContent=sum?TYPE_NAMES[d.win]:'—';liveLevel.textContent=sum?`Lv${d.level}`:'—';liveSeed.textContent=String(d.seed)}
+function renderQa(){qaScores.innerHTML=TYPES.map(k=>`<div class="score-chip">${TYPE_NAMES[k]}<b>${qaData.scores[k]}</b>${qaData.n[k].toFixed(1)}%</div>`).join('');qaSummary.textContent=`WIN  ${TYPE_NAMES[qaData.win]} / Lv${qaData.level}\nDERIVED SEED  ${qaData.seed}\nSECONDARY  ${qaData.secondaries.map(x=>`${TYPE_NAMES[x.type]} ${x.p.toFixed(1)}% / Lv${x.level}`).join('、')}`;if(manualSeed===null)seedInput.value=String(qaData.seed)}
+function openDrawer(on=true){drawer.classList.toggle('open',on);toggle.setAttribute('aria-expanded',String(on));toggle.textContent=on?'QA ◂':'QA ▸'}
+toggle.onclick=()=>openDrawer(!drawer.classList.contains('open'));closeDebug.onclick=()=>openDrawer(false);
+
+function resolveQuestion(doc){const text=stripQuestion(doc.querySelector('#question')?.textContent);return questionByText.get(text)||null}
+function resetLive(){liveScores=clean();committedSingles.clear();committedMulti.clear();renderLive()}
+function attachFlow(){const doc=appFrame.contentDocument;if(!doc)return;resetLive();const style=doc.createElement('style');style.textContent='#skip{display:none!important}';doc.head.appendChild(style);doc.addEventListener('click',e=>{const t=e.target.closest?.('button');if(!t)return;if(t.id==='start'||t.id==='restart'||t.id==='home'){if(t.id!=='start'||TYPES.reduce((a,k)=>a+liveScores[k],0)!==0)resetLive();return}const key=resolveQuestion(doc),q=key&&QUESTIONS[key];if(!q)return;if(t.classList.contains('bubble')){const buttons=[...doc.querySelectorAll('#options>.bubble')],idx=buttons.indexOf(t);if(idx<0)return;if(q.type==='single'){if(committedSingles.has(key))return;committedSingles.add(key);add(liveScores,q.options[idx]?.score);renderLive()}return}if(t.id==='confirm'&&q.type==='multi'&&!committedMulti.has(key)){committedMulti.add(key);const selected=[...doc.querySelectorAll('#options>.bubble.selected')];for(const b of selected){const idx=[...doc.querySelectorAll('#options>.bubble')].indexOf(b);if(idx>=0)add(liveScores,q.options[idx]?.score)}renderLive()}},false)}
+appFrame.addEventListener('load',attachFlow);
+
+function simulateLegal(){const s=clean();let key='Q1',guard=0;while(key&&key!=='RESULT'&&guard++<60){const q=QUESTIONS[key];if(!q)break;if(q.type==='multi'){q.options.forEach(opt=>{if(Math.random()<.42)add(s,opt.score)});key=NEXT[key]||'RESULT'}else{const idx=Math.floor(Math.random()*q.options.length),opt=q.options[idx];add(s,opt.score);key=opt.next||NEXT[key]||'RESULT'}}return s}
+function setQaScores(s,autoPreview=true){qaData=resultData(s);manualSeed=null;previewType=qaData.win;previewLevel=qaData.level;syncButtons();renderQa();if(autoPreview)loadPreview()}
+document.querySelector('#useLive').onclick=()=>setQaScores(liveScores);
+document.querySelector('#randomResult').onclick=()=>setQaScores(simulateLegal());
+document.querySelector('#useDerivedSeed').onclick=()=>{manualSeed=null;seedInput.value=String(qaData.seed);loadPreview()};
+document.querySelector('#randomSeed').onclick=()=>{const a=new Uint32Array(1);crypto.getRandomValues(a);manualSeed=a[0]||1;seedInput.value=String(manualSeed);loadPreview()};
+seedInput.addEventListener('change',()=>{let v=Math.trunc(Number(seedInput.value));if(!Number.isFinite(v)||v<1)v=1;if(v>4294967295)v=4294967295;manualSeed=v>>>0||1;seedInput.value=String(manualSeed);loadPreview()});
+
+const typeButtons=document.querySelector('#typeButtons'),levelButtons=[...document.querySelectorAll('#levelButtons button')];
+typeButtons.innerHTML=TYPES.map(k=>`<button type="button" data-type="${k}">${TYPE_NAMES[k]}</button>`).join('');
+function syncButtons(){[...typeButtons.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.type===previewType));levelButtons.forEach(b=>b.classList.toggle('on',Number(b.dataset.level)===previewLevel))}
+typeButtons.addEventListener('click',e=>{const b=e.target.closest('button[data-type]');if(!b)return;previewType=b.dataset.type;syncButtons();loadPreview()});
+levelButtons.forEach(b=>b.onclick=()=>{previewLevel=Number(b.dataset.level);syncButtons();loadPreview()});
+
+function previewUrl(){const seed=manualSeed??qaData.seed,p=new URLSearchParams({type:V5[previewType],level:String(previewLevel),seed:String(seed)});if(previewType==='特')p.set('secondary',qaData.secondaries.map(x=>`${V5[x.type]}:${x.level}`).join(','));return `./water-divination-runtime.html?${p.toString()}`}
+let previewRun=0;
+function loadPreview(){const run=++previewRun,runtimeSeed=manualSeed??qaData.seed;runtimeStatus.textContent=`LOADING…\n${TYPE_NAMES[previewType]} / Lv${previewLevel} / SEED ${runtimeSeed}`;waterPreview.src=previewUrl();waterPreview.onload=async()=>{const doc=waterPreview.contentDocument;if(doc){const style=doc.createElement('style');style.textContent='.ui,.back,#result{display:none!important}.reveal{bottom:7%!important;font-size:14px!important}';doc.head.appendChild(style)}const start=performance.now();while(run===previewRun&&performance.now()-start<8000){const rt=waterPreview.contentWindow?.__WATER_RUNTIME__;if(rt?.ready){const sec=(rt.secondaries||[]).map(x=>`${Object.keys(V5).find(k=>V5[k]===x.type)||x.type}:Lv${x.level}`).join('、')||'無';const an=(rt.anomalies||[]).map(x=>ZH[x]||x).join('、')||'無';runtimeStatus.textContent=`TYPE  ${TYPE_NAMES[previewType]} / Lv${rt.level}\nSEED  ${rt.seed}\nSECONDARY  ${sec}\nANOMALY  ${an}`;return}if(rt?.ready===false){runtimeStatus.textContent=`RUNTIME ERROR\n${rt.error||'unknown'}`;return}await new Promise(r=>setTimeout(r,50))}if(run===previewRun)runtimeStatus.textContent='RUNTIME TIMEOUT'}}
+
+for(const ev of ['gesturestart','gesturechange','gestureend'])document.addEventListener(ev,e=>e.preventDefault(),{passive:false});document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+renderLive();renderQa();syncButtons();loadPreview();
+</script>
+</body>
+</html>
