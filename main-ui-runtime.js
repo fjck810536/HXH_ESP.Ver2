@@ -46,7 +46,7 @@ function revealMulti(box,scroll,items,run){
   box.replaceChildren();
   scroll.scrollTop=0;
 
-  const gap=500;
+  const gap=300;
   const incomingDuration=180;
 
   function showOne(index){
