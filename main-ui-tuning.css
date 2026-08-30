@@ -1,26 +1,40 @@
 :root{--dock-max:42vh}
 
-/* The option field is a centered stack. When the stack grows taller than the viewport,
-   auto margins collapse naturally and the same field becomes normally scrollable. */
-.option-scroll{display:flex!important;flex-direction:column!important;justify-content:flex-start!important;overflow-y:auto!important;padding-top:18px!important;padding-bottom:18px!important}
-.single-options,.multi-options{min-height:0!important;margin-top:auto!important;margin-bottom:auto!important;overflow:visible!important}
-.single-options{justify-content:flex-start!important;gap:16px!important;padding:20px 4px!important}
-.multi-options{display:flex!important;flex-direction:column!important;align-content:initial!important;align-items:stretch!important;gap:18px!important;padding:22px 8px!important}
+/* OPTION FIELD = one bottom-anchored message stream.
+   As new choices arrive, older choices are pushed upward and eventually leave the viewport.
+   After the reveal finishes, the field remains freely scrollable. */
+.option-scroll{display:flex!important;flex-direction:column!important;justify-content:flex-start!important;overflow-y:auto!important;overscroll-behavior:contain!important;padding:14px clamp(10px,3vw,24px) 12px!important}
+.single-options,.multi-options{min-height:0!important;margin-top:auto!important;margin-bottom:0!important;overflow:visible!important}
+.single-options,.multi-options{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:16px!important;padding:18px 4px 10px!important}
 
-/* Multi-select keeps the cloud-like staggering, but now every thought belongs to one vertical stack. */
-label.option.thought{grid-column:auto!important;margin-top:0!important;justify-self:auto!important}
-label.option.thought:nth-child(4n+1){align-self:flex-start!important;width:82%!important}
-label.option.thought:nth-child(4n+2){align-self:flex-end!important;width:74%!important}
-label.option.thought:nth-child(4n+3){align-self:flex-start!important;margin-left:10%!important;width:79%!important}
-label.option.thought:nth-child(4n){align-self:flex-end!important;margin-right:5%!important;width:88%!important}
-label.option.thought.wide{align-self:center!important;margin-left:0!important;margin-right:0!important;width:min(92%,620px)!important}
+/* MULTI SELECT now uses the same speech-box language as single select.
+   The small square is only a state affordance; the container shape is identical. */
+label.option.thought{position:relative!important;display:flex!important;align-items:center!important;gap:10px!important;min-height:50px!important;margin-top:0!important;margin-left:0!important;margin-right:0!important;padding:12px 14px!important;border:2px solid #626262!important;border-radius:3px 2px 2px 1px!important;background:#050505!important;color:#d0d0d0!important;line-height:1.55!important;cursor:pointer!important;grid-column:auto!important;justify-self:auto!important}
+label.option.thought:nth-child(odd){align-self:flex-start!important;width:min(92%,650px)!important}
+label.option.thought:nth-child(even){align-self:flex-end!important;width:min(86%,610px)!important;border-radius:2px 3px 1px 2px!important}
+label.option.thought:nth-child(4n+3){width:min(80%,570px)!important}
+label.option.thought:nth-child(4n){width:min(89%,630px)!important}
+label.option.thought.wide{margin-left:0!important;margin-right:0!important}
 
-/* Old CSS entry animations are disabled. Runtime reveals one bubble at a time and performs FLIP pushes. */
+/* Same broken-line notch + speech tail as ordinary choices. */
+label.option.thought::before{content:""!important;position:absolute!important;width:11px!important;height:2px!important;top:7px!important;left:-2px!important;bottom:auto!important;right:auto!important;border:0!important;border-radius:0!important;background:#000!important;pointer-events:none!important}
+label.option.thought::after{content:""!important;position:absolute!important;width:18px!important;height:13px!important;bottom:-9px!important;left:18px!important;right:auto!important;border:0!important;border-left:2px solid #626262!important;border-bottom:2px solid #626262!important;border-radius:0!important;background:#050505!important;transform:skewX(-33deg)!important;pointer-events:none!important}
+label.option.thought:nth-child(even)::after{left:auto!important;right:20px!important;transform:skewX(33deg)!important}
+label.option.thought:hover{border-color:#aaa!important;color:#fff!important}
+label.option.thought:hover::after{border-left-color:#aaa!important;border-bottom-color:#aaa!important}
+
+label.option.thought.selected{background:#ddd!important;color:#000!important;border-color:#eee!important}
+label.option.thought.selected::before{background:#000!important}
+label.option.thought.selected::after{background:#ddd!important;border-left-color:#eee!important;border-bottom-color:#eee!important}
+label.option.thought input[type="checkbox"]{appearance:none!important;width:17px!important;height:17px!important;margin:0!important;flex:0 0 auto!important;border:2px solid #777!important;background:#000!important;border-radius:0!important}
+label.option.thought input[type="checkbox"]:checked{border-color:#000!important;background:#ddd!important;box-shadow:inset 0 0 0 3px #000!important}
+label.option.thought.selected input[type="checkbox"]{border-color:#000!important;background:#ddd!important;box-shadow:inset 0 0 0 3px #000!important}
+
+/* Runtime owns reveal and push motion. */
 .stack-bubble{animation:none!important;will-change:auto!important}
 .stack-hidden{display:none!important}
 
-/* Multi-select confirmation is visually INSIDE the fixed question frame, bottom-right.
-   This preserves full question width above it and gives the action a stable home on phones. */
+/* Multi-select confirmation stays INSIDE the fixed question frame, bottom-right. */
 .question-dock.has-confirm{position:relative!important;display:block!important}
 .question-dock.has-confirm .question{max-height:34vh!important;padding-bottom:76px!important}
 .question-dock .confirm-dock{position:absolute!important;z-index:14!important;right:calc(clamp(10px,3vw,18px) + 12px)!important;bottom:calc(21px + env(safe-area-inset-bottom))!important;width:auto!important;margin:0!important;padding:0!important;background:none!important;animation:none!important}
@@ -32,10 +46,10 @@ label.option.thought.wide{align-self:center!important;margin-left:0!important;ma
   .question-dock.has-confirm .question{max-height:32vh!important;padding-bottom:72px!important}
   .question-dock .confirm-dock{right:20px!important;bottom:calc(19px + env(safe-area-inset-bottom))!important}
   .question-dock .confirm-dock .primary{min-width:104px!important;min-height:42px!important;padding:7px 13px!important}
-  label.option.thought:nth-child(4n+1){width:88%!important}
-  label.option.thought:nth-child(4n+2){width:82%!important}
-  label.option.thought:nth-child(4n+3){margin-left:6%!important;width:86%!important}
-  label.option.thought:nth-child(4n){margin-right:2%!important;width:91%!important}
+  label.option.thought:nth-child(odd){width:94%!important}
+  label.option.thought:nth-child(even){width:90%!important}
+  label.option.thought:nth-child(4n+3){width:86%!important}
+  label.option.thought:nth-child(4n){width:92%!important}
 }
 
 @media(prefers-reduced-motion:reduce){.stack-bubble{animation:none!important;transition:none!important}}
