@@ -5,39 +5,196 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>HXH_ESP.Ver2｜念能力測驗</title>
   <style>
-    :root { color-scheme: light; --bg:#efefef; --panel:#fff; --text:#111; --muted:#666; --line:#cfcfcf; }
-    * { box-sizing: border-box; }
-    html,body { margin:0; min-height:100%; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif; }
-    body { min-height:100svh; display:flex; justify-content:center; padding:24px 14px calc(32px + env(safe-area-inset-bottom)); }
-    main { width:min(100%,680px); }
-    .card { background:var(--panel); border:1px solid var(--line); padding:22px 18px; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+    :root {
+      color-scheme: dark;
+      --bg:#000;
+      --panel:#020202;
+      --text:#e7e7e7;
+      --muted:#777;
+      --dim:#4a4a4a;
+      --line:#8a8a8a;
+      --line-hot:#e6e6e6;
+      --px:3px;
+    }
+    * { box-sizing:border-box; }
+    html,body {
+      margin:0;
+      min-height:100%;
+      background:var(--bg);
+      color:var(--text);
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,"Cascadia Mono","Noto Sans Mono CJK TC","Noto Sans TC",monospace;
+    }
+    body {
+      min-height:100svh;
+      display:flex;
+      justify-content:center;
+      padding:clamp(14px,4vw,34px) 12px calc(28px + env(safe-area-inset-bottom));
+      overflow-x:hidden;
+    }
+    body::after {
+      content:"";
+      position:fixed;
+      z-index:20;
+      inset:0;
+      pointer-events:none;
+      opacity:.035;
+      background:repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 4px);
+    }
+    main { width:min(100%,760px); margin:auto 0; }
+    .card,
+    .chart-wrap,
+    .score,
+    .question,
+    label.option {
+      position:relative;
+      background-color:var(--panel);
+      background-image:
+        linear-gradient(var(--line),var(--line)),linear-gradient(var(--line),var(--line)),
+        linear-gradient(var(--line),var(--line)),linear-gradient(var(--line),var(--line)),
+        linear-gradient(var(--line),var(--line)),linear-gradient(var(--line),var(--line)),
+        linear-gradient(var(--line),var(--line)),linear-gradient(var(--line),var(--line));
+      background-repeat:no-repeat;
+      background-size:34px var(--px),var(--px) 24px,34px var(--px),var(--px) 24px,34px var(--px),var(--px) 24px,34px var(--px),var(--px) 24px;
+      background-position:left top,left top,right top,right top,left bottom,left bottom,right bottom,right bottom;
+    }
+    .card { padding:clamp(20px,4vw,34px) clamp(16px,4vw,30px); min-height:340px; }
     h1,h2,p { margin-top:0; }
-    h1 { font-size:1.45rem; margin-bottom:10px; }
+    h1 { font-size:clamp(1.45rem,5vw,2rem); line-height:1.35; margin-bottom:13px; letter-spacing:.06em; }
     h2 { font-size:1.15rem; line-height:1.6; }
-    .eyebrow,.meta { color:var(--muted); font-size:.86rem; }
-    .meta { display:flex; justify-content:space-between; gap:10px; margin-bottom:12px; }
-    .question { white-space:pre-line; margin:8px 0 18px; font-size:1.05rem; line-height:1.75; }
+    .eyebrow {
+      margin-bottom:13px;
+      color:var(--muted);
+      font-size:.78rem;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+    }
+    .eyebrow::before { content:"■ "; color:#ddd; font-size:.66em; }
+    .meta {
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin:-2px 0 16px;
+      padding-bottom:9px;
+      color:var(--muted);
+      font-size:.76rem;
+      letter-spacing:.08em;
+      border-bottom:2px dashed #242424;
+    }
+    .question {
+      white-space:pre-line;
+      margin:8px 0 20px;
+      padding:18px 16px;
+      font-size:clamp(1.02rem,3.8vw,1.18rem);
+      line-height:1.8;
+      letter-spacing:.015em;
+    }
+    .question::before {
+      content:"INPUT";
+      position:absolute;
+      left:14px;
+      top:-6px;
+      padding:0 7px;
+      background:#000;
+      color:#555;
+      font-size:9px;
+      line-height:12px;
+      letter-spacing:.15em;
+    }
     .options { display:grid; gap:10px; }
-    button { width:100%; min-height:48px; border:1px solid #aaa; background:#f7f7f7; color:#111; border-radius:6px; font:inherit; padding:12px 14px; text-align:left; cursor:pointer; }
-    button:active { transform:translateY(1px); }
-    button.primary { background:#111; color:#fff; border-color:#111; text-align:center; font-weight:700; }
+    button {
+      appearance:none;
+      position:relative;
+      width:100%;
+      min-height:50px;
+      border:2px solid #5f5f5f;
+      border-radius:0;
+      background:#050505;
+      color:#c8c8c8;
+      font:inherit;
+      line-height:1.55;
+      padding:12px 14px;
+      text-align:left;
+      cursor:pointer;
+      box-shadow:none;
+    }
+    button::before,button::after {
+      content:"";
+      position:absolute;
+      background:#000;
+      pointer-events:none;
+    }
+    button::before { width:10px; height:2px; left:-2px; top:8px; }
+    button::after { width:2px; height:10px; right:8px; bottom:-2px; }
+    button:hover:not([disabled]) { border-color:#aaa; color:#fff; }
+    button:active:not([disabled]) { transform:translate(2px,2px); background:#ddd; color:#000; border-color:#fff; }
+    button.primary {
+      background:#ddd;
+      color:#000;
+      border-color:#eee;
+      text-align:center;
+      font-weight:800;
+      letter-spacing:.1em;
+    }
+    button.primary::before,button.primary::after { background:#000; }
     button.secondary { text-align:center; }
-    button[disabled] { opacity:.5; cursor:not-allowed; }
-    label.option { display:flex; align-items:flex-start; gap:11px; border:1px solid #aaa; border-radius:6px; background:#f7f7f7; padding:12px 14px; line-height:1.5; }
-    input[type="checkbox"] { width:20px; height:20px; margin:1px 0 0; flex:0 0 auto; }
-    .actions { display:grid; gap:10px; margin-top:18px; }
-    .chart-wrap { margin:18px 0 16px; border:1px solid var(--line); background:#fafafa; padding:14px 10px 10px; border-radius:8px; }
-    .chart-title { margin:0 0 10px; text-align:center; font-size:1rem; color:#222; }
-    .chart-caption { margin:8px 0 0; text-align:center; font-size:.8rem; color:var(--muted); line-height:1.5; }
-    .chart-svg { display:block; width:100%; height:auto; }
-    .score-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:18px 0; }
-    .score { border:1px solid var(--line); padding:14px; background:#fafafa; }
-    .score strong { display:block; font-size:1.35rem; margin-top:4px; }
+    button[disabled] { opacity:.42; cursor:not-allowed; }
+    label.option {
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      padding:13px 14px;
+      line-height:1.55;
+      cursor:pointer;
+      color:#c6c6c6;
+    }
+    label.option:hover { color:#fff; }
+    label.option:has(input:checked) {
+      background-color:#ddd;
+      color:#000;
+      background-image:
+        linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),
+        linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000);
+    }
+    input[type="checkbox"] {
+      appearance:none;
+      width:20px;
+      height:20px;
+      margin:2px 0 0;
+      flex:0 0 auto;
+      border:2px solid #777;
+      border-radius:0;
+      background:#000;
+    }
+    input[type="checkbox"]:checked {
+      border-color:#000;
+      background:#ddd;
+      box-shadow:inset 0 0 0 4px #000;
+    }
+    .actions { display:grid; gap:10px; margin-top:20px; }
+    .chart-wrap {
+      margin:22px 0 18px;
+      padding:18px 10px 12px;
+      background-color:#020202;
+    }
+    .chart-title { margin:0 0 8px; text-align:center; font-size:.95rem; color:#ccc; letter-spacing:.08em; }
+    .chart-caption { margin:8px auto 0; max-width:580px; text-align:center; font-size:.72rem; color:#666; line-height:1.6; }
+    .chart-svg { display:block; width:100%; height:auto; filter:invert(1); }
+    .score-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:18px 0; }
+    .score { padding:14px 15px; background-color:#020202; color:#888; }
+    .score strong { display:block; font-size:1.35rem; margin-top:4px; color:#eee; }
     .result-head { margin-bottom:8px; }
-    .result-main { font-size:1rem; line-height:1.7; margin-bottom:10px; }
-    .note { margin-top:16px; font-size:.84rem; color:var(--muted); line-height:1.6; }
+    .result-main { font-size:1rem; line-height:1.7; margin-bottom:10px; color:#aaa; }
+    .note { margin-top:18px; font-size:.76rem; color:#666; line-height:1.65; }
     .hidden { display:none !important; }
-    @media (max-width: 420px) {
+    @media (max-width:520px) {
+      body { padding-left:8px; padding-right:8px; }
+      .card { padding:21px 13px; }
+      .question { padding:17px 13px; }
+      .score-grid { grid-template-columns:1fr 1fr; gap:8px; }
+      .score { padding:12px; }
+      button { min-height:48px; padding:11px 12px; }
+    }
+    @media (max-width:350px) {
       .score-grid { grid-template-columns:1fr; }
     }
   </style>
