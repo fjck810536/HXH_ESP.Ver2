@@ -76,14 +76,12 @@ function revealStack(){
 
   if(isMulti){
     /*
-      MULTI SELECT ONLY:
-      - no per-item FLIP transforms on old options
-      - short stacks move as one group
-      - overflowing stacks move by smooth scroll only
-      This prevents accumulated transforms from looking like collisions/jitter.
+      MULTI SELECT ONLY.
+      Unrevealed options are now truly display:none, so each option enters the layout once.
+      Keep the cadence deliberately readable while we validate the no-jitter baseline.
     */
-    const motion=220;
-    const gap=300;
+    const motion=240;
+    const gap=420;
     const shown=[];
 
     function showMulti(index){
@@ -92,7 +90,6 @@ function revealStack(){
       const beforeBox=box.getBoundingClientRect();
       const beforeScroll=scroll.scrollTop;
 
-      /* Clear any completed child animations before the next layout measurement. */
       shown.forEach(el=>el.getAnimations().forEach(a=>a.cancel()));
 
       incoming.classList.remove('stack-hidden');
@@ -105,13 +102,13 @@ function revealStack(){
         animateGroupShift(box,beforeBox.top-afterBox.top,motion);
       }
 
-      animateIncoming(incoming,motion,30,'cubic-bezier(.2,.72,.28,1)');
+      animateIncoming(incoming,220,24,'cubic-bezier(.2,.72,.28,1)');
       shown.push(incoming);
 
       if(index+1<items.length)setTimeout(()=>showMulti(index+1),gap);
     }
 
-    setTimeout(()=>showMulti(0),110);
+    setTimeout(()=>showMulti(0),140);
     return;
   }
 
