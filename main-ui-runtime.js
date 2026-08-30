@@ -55,7 +55,7 @@ function revealStack(){
     shown.push(incoming);
 
     if(index+1<items.length){
-      const gap=items.length>=9?185:225;
+      const gap=items.length>=9?185:75;
       setTimeout(()=>showOne(index+1),gap);
     }
   }
