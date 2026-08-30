@@ -46,8 +46,9 @@ function revealMulti(box,scroll,items,run){
   box.replaceChildren();
   scroll.scrollTop=0;
 
-  const gap=300;
-  const incomingDuration=180;
+  /* Nearly continuous stepping: next option arrives as the previous entry settles. */
+  const gap=170;
+  const incomingDuration=150;
 
   function showOne(index){
     if(run!==stackRun||!box.isConnected||index>=items.length)return;
@@ -64,7 +65,7 @@ function revealMulti(box,scroll,items,run){
     if(index+1<items.length)setTimeout(()=>showOne(index+1),gap);
   }
 
-  setTimeout(()=>showOne(0),160);
+  setTimeout(()=>showOne(0),80);
 }
 
 function revealStack(){
