@@ -17,7 +17,7 @@ function animatePush(items,before){
     if(Math.abs(dx)<.5&&Math.abs(dy)<.5)return;
     el.animate(
       [{transform:`translate3d(${dx}px,${dy}px,0)`},{transform:'translate3d(0,0,0)'}],
-      {duration:320,easing:'cubic-bezier(.2,.72,.28,1)',fill:'both'}
+      {duration:210,easing:'cubic-bezier(.2,.72,.28,1)',fill:'both'}
     );
   });
 }
@@ -36,7 +36,7 @@ function revealStack(){
     el.getAnimations().forEach(a=>a.cancel());
   });
 
-  // The initial state is genuinely centered. No pre-alignment at the top and no forced scroll-to-bottom.
+  // Start from the true center. Each new bubble joins the stack and pushes older ones upward.
   requestAnimationFrame(()=>{scroll.scrollTop=0;});
   const shown=[];
 
@@ -46,22 +46,21 @@ function revealStack(){
     const before=new Map(shown.map(el=>[el,el.getBoundingClientRect()]));
     incoming.classList.remove('stack-hidden');
 
-    // Force the new centered layout, then animate the already-arrived bubbles from their old positions.
     incoming.getBoundingClientRect();
     animatePush(shown,before);
     incoming.animate(
-      [{opacity:0,transform:'translate3d(0,88px,0)'},{opacity:1,transform:'translate3d(0,0,0)'}],
-      {duration:430,easing:'cubic-bezier(.18,.70,.24,1)',fill:'both'}
+      [{opacity:0,transform:'translate3d(0,72px,0)'},{opacity:1,transform:'translate3d(0,0,0)'}],
+      {duration:300,easing:'cubic-bezier(.18,.70,.24,1)',fill:'both'}
     );
     shown.push(incoming);
 
     if(index+1<items.length){
-      const gap=items.length>=9?330:390;
+      const gap=items.length>=9?185:225;
       setTimeout(()=>showOne(index+1),gap);
     }
   }
 
-  setTimeout(()=>showOne(0),120);
+  setTimeout(()=>showOne(0),70);
 }
 
 function enhanceQuestion(){
