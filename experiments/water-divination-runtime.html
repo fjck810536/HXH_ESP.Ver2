@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>水見式 Production Runtime</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#000;color:#ddd;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-height:100%}body{min-height:100svh;overflow:hidden}#stage{position:fixed;inset:0}canvas{display:block;width:100%;height:100%;image-rendering:pixelated}.ui{position:fixed;z-index:5;left:12px;top:12px;right:12px;display:grid;gap:6px;font-size:11px;max-width:780px}.row{display:flex;gap:5px;flex-wrap:wrap;align-items:center}.label{width:48px;color:#555}.row button{border:1px solid #333;background:#090909;color:#888;padding:6px 8px;font:inherit}.row button.on{background:#ddd;color:#000}.debug{color:#555}.reveal{position:fixed;z-index:4;left:0;right:0;bottom:13vh;text-align:center;font-size:clamp(18px,5vw,28px);letter-spacing:.08em;text-shadow:0 0 8px #000}.result{position:fixed;z-index:6;left:50%;bottom:5vh;transform:translate(-50%,15px);width:min(88vw,420px);padding:14px;border:1px solid #555;background:#000d;text-align:center;opacity:0;visibility:hidden;transition:.35s}.result.show{opacity:1;visibility:visible;transform:translate(-50%,0)}.name{font-size:26px;letter-spacing:.14em}.score{margin-top:4px;color:#aaa}.note{margin-top:5px;color:#888;font-size:11px;white-space:pre-line}.back{position:fixed;right:12px;bottom:12px;color:#555;text-decoration:none;font-size:11px}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div class="ui">
+  <div>WATER DIVINATION / PRODUCTION RUNTIME / V5 CORE</div>
+  <div class="row"><span class="label">TYPE</span><button class="type on" data-t="enhance">強化</button><button class="type" data-t="transmute">變化</button><button class="type" data-t="conjure">具現</button><button class="type" data-t="specialize">特質</button><button class="type" data-t="manipulate">操作</button><button class="type" data-t="emit">放出</button></div>
+  <div class="row"><span class="label">LEVEL</span><button class="lv" data-l="1">Lv1</button><button class="lv on" data-l="2">Lv2</button><button class="lv" data-l="3">Lv3</button><button id="replay">REPLAY</button><button id="reseed">RESEED</button></div>
+  <div class="row"><span class="label">ENH3</span><button id="enhSeeded" class="on" disabled>SEED → --</button></div>
+  <div class="row"><span class="label">EMIT3</span><button id="emitSeeded" class="on" disabled>SEED → --</button></div>
+  <div id="debug" class="debug"></div>
+</div>
+<div id="reveal" class="reveal">您的念能力是</div>
+<div id="result" class="result"><div id="resultName" class="name"></div><div id="resultScore" class="score"></div><div id="resultNote" class="note"></div></div>
+<a class="back" href="../">← HXH_ESP.Ver2</a>
+<script>
+(async()=>{
+  try{
+    const files=[1,2,3,4].map(i=>`./water-divination-stress-v4-core-${i}.txt?v=prod-runtime`).concat('./water-divination-stress-v5-patch.txt?v=prod-runtime');
+    const parts=await Promise.all(files.map(async f=>{const r=await fetch(f,{cache:'no-store'});if(!r.ok)throw new Error(f+' '+r.status);return r.text()}));
+    const integration=`
+/* production integration shim: appended inside the same ES module as v5 core */
+const __params=new URLSearchParams(location.search);
+const __allowedTypes=new Set(['enhance','transmute','conjure','specialize','manipulate','emit']);
+const __requestedType=__params.get('type');
+const __requestedLevel=Number(__params.get('level'));
+const __requestedSeed=Number(__params.get('seed'));
+const __secondaryRaw=__params.get('secondary')||'';
+const __secondaryAllowed=new Set(['enhance','transmute','conjure','manipulate','emit']);
+const __externalSecondaries=__secondaryRaw.split(',').map(x=>{const [type,lv]=x.split(':');return{type,level:Number(lv)}}).filter(x=>__secondaryAllowed.has(x.type)&&Number.isInteger(x.level)&&x.level>=0&&x.level<=3).slice(0,2);
+if(__allowedTypes.has(__requestedType))stateType=__requestedType;
+if(Number.isInteger(__requestedLevel)&&__requestedLevel>=1&&__requestedLevel<=3)stateLevel=__requestedLevel;
+if(Number.isFinite(__requestedSeed))seed=(Math.trunc(__requestedSeed)>>>0)||1;
+const __baseMakeSpecialRecipe=makeSpecialRecipe;
+makeSpecialRecipe=function(){const recipe=__baseMakeSpecialRecipe();if(__externalSecondaries.length)recipe.secondaries=__externalSecondaries.filter(x=>x.level>0);return recipe};
+typeBtns.forEach(btn=>btn.classList.toggle('on',btn.dataset.t===stateType));
+lvBtns.forEach(btn=>btn.classList.toggle('on',Number(btn.dataset.l)===stateLevel));
+shown=false;
+prepareRun();
+const __publishRuntime=()=>{const detail={ready:true,type:stateType,level:stateLevel,seed,secondaries:specialRecipe?.secondaries?.map(x=>({type:x.type,level:x.level}))||[],anomalies:specialRecipe?.anomalies?.slice()||[],debug:debugEl.textContent};window.__WATER_RUNTIME__=detail;window.dispatchEvent(new CustomEvent('water-runtime-ready',{detail}))};
+__publishRuntime();
+const __baseReplay=document.querySelector('#replay').onclick;document.querySelector('#replay').onclick=()=>{__baseReplay();queueMicrotask(__publishRuntime)};
+`;
+    const url=URL.createObjectURL(new Blob([parts.join(''),integration],{type:'text/javascript'}));
+    await import(url);
+    URL.revokeObjectURL(url);
+  }catch(e){
+    window.__WATER_RUNTIME__={ready:false,error:e.message};
+    document.body.textContent='water runtime load failed: '+e.message;
+    console.error(e);
+  }
+})();
+</script>
+</body>
+</html>
