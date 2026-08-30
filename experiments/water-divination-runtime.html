@@ -33,6 +33,7 @@ const __allowedTypes=new Set(['enhance','transmute','conjure','specialize','mani
 const __requestedType=__params.get('type');
 const __requestedLevel=Number(__params.get('level'));
 const __requestedSeed=Number(__params.get('seed'));
+const __hasExternalSecondaries=__params.has('secondary');
 const __secondaryRaw=__params.get('secondary')||'';
 const __secondaryAllowed=new Set(['enhance','transmute','conjure','manipulate','emit']);
 const __externalSecondaries=__secondaryRaw.split(',').map(x=>{const [type,lv]=x.split(':');return{type,level:Number(lv)}}).filter(x=>__secondaryAllowed.has(x.type)&&Number.isInteger(x.level)&&x.level>=0&&x.level<=3).slice(0,2);
@@ -40,7 +41,7 @@ if(__allowedTypes.has(__requestedType))stateType=__requestedType;
 if(Number.isInteger(__requestedLevel)&&__requestedLevel>=1&&__requestedLevel<=3)stateLevel=__requestedLevel;
 if(Number.isFinite(__requestedSeed))seed=(Math.trunc(__requestedSeed)>>>0)||1;
 const __baseMakeSpecialRecipe=makeSpecialRecipe;
-makeSpecialRecipe=function(){const recipe=__baseMakeSpecialRecipe();if(__externalSecondaries.length)recipe.secondaries=__externalSecondaries.filter(x=>x.level>0);return recipe};
+makeSpecialRecipe=function(){const recipe=__baseMakeSpecialRecipe();if(__hasExternalSecondaries)recipe.secondaries=__externalSecondaries.filter(x=>x.level>0);return recipe};
 typeBtns.forEach(btn=>btn.classList.toggle('on',btn.dataset.t===stateType));
 lvBtns.forEach(btn=>btn.classList.toggle('on',Number(btn.dataset.l)===stateLevel));
 shown=false;
